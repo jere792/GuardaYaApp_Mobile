@@ -1,0 +1,6 @@
+# Configuracion de Supabase CLI para GuardaYaApp
+# Este proyecto usa monorepo: Flutter + Supabase
+
+[project]
+id = "gfnfgmangzlhttytlgbg"
+name = "GuardaYaApp"

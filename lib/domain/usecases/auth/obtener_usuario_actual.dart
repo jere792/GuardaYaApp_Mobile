@@ -9,7 +9,7 @@ class ObtenerUsuarioActual implements UseCase<Usuario?, NoParams> {
   ObtenerUsuarioActual(this.repository);
 
   @override
-  Future<<Either<Failure, Usuario?>> call(NoParams params) async {
+  Future<Either<Failure, Usuario?>> call(NoParams params) async {
     return await repository.getUsuarioActual();
   }
 }

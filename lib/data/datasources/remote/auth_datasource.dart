@@ -1,21 +1,23 @@
-import 'package:guardaya_app/core/constants/api_constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
 
 class AuthDatasource {
   Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await SupabaseService.rpc(
-      ApiConstants.loginRpc,
-      params: {
-        'p_username': username,
-        'p_password': password,
-      },
-    );
-    
-    if (response.error != null) {
-      throw Exception(response.error!.message);
+    try {
+      final data = await SupabaseService.rpc(
+        'login_usuario',
+        params: {
+          'p_username': username,
+          'p_password': password,
+        },
+      );
+      return data as Map<String, dynamic>;
+    } on PostgrestException catch (e) {
+      throw AuthException(message: e.message);
+    } catch (e) {
+      throw AuthException(message: e.toString());
     }
-    
-    return response.data as Map<String, dynamic>;
   }
 
   Future<void> logout() async {

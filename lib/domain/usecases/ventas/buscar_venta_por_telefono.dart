@@ -9,7 +9,7 @@ class BuscarVentaPorTelefono implements UseCase<List<Venta>, BuscarVentaPorTelef
   BuscarVentaPorTelefono(this.repository);
 
   @override
-  Future<<Either<Failure, List<Venta>>> call(BuscarVentaPorTelefonoParams params) async {
+  Future<Either<Failure, List<Venta>>> call(BuscarVentaPorTelefonoParams params) async {
     return await repository.buscarVentaPorTelefono(params.empresaId, params.telefono);
   }
 }

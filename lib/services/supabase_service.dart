@@ -7,7 +7,7 @@ class SupabaseService {
   static Future<void> initialize() async {
     await Supabase.initialize(
       url: ApiConstants.supabaseUrl,
-      anonKey: ApiConstants.supabaseAnonKey,
+      publishableKey: ApiConstants.supabaseAnonKey,
     );
   }
 
@@ -16,7 +16,7 @@ class SupabaseService {
   static SupabaseQueryBuilder from(String table) => supabase.from(table);
   static SupabaseStorageClient get storage => supabase.storage;
 
-  static Future<PostgrestResponse> rpc(String fn, {Map<String, dynamic>? params}) async {
+  static Future<dynamic> rpc(String fn, {Map<String, dynamic>? params}) async {
     return await supabase.rpc(fn, params: params ?? {});
   }
 }

@@ -9,7 +9,7 @@ class RegistrarVenta implements UseCase<Venta, Venta> {
   RegistrarVenta(this.repository);
 
   @override
-  Future<<Either<Failure, Venta>> call(Venta params) async {
+  Future<Either<Failure, Venta>> call(Venta params) async {
     return await repository.registrarVenta(params);
   }
 }

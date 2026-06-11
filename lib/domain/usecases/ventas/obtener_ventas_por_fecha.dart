@@ -9,7 +9,7 @@ class ObtenerVentasPorFecha implements UseCase<List<Venta>, ObtenerVentasParams>
   ObtenerVentasPorFecha(this.repository);
 
   @override
-  Future<<Either<Failure, List<Venta>>> call(ObtenerVentasParams params) async {
+  Future<Either<Failure, List<Venta>>> call(ObtenerVentasParams params) async {
     return await repository.obtenerVentasPorFecha(params.empresaId, params.fecha);
   }
 }

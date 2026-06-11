@@ -46,6 +46,7 @@ dependencies:
 
   # Functional Programming
   fpdart: ^1.1.1
+  equatable: ^2.0.7
 
   # DI
   get_it: ^8.0.3

@@ -11,7 +11,7 @@ class ClientesRepositoryImpl implements ClientesRepository {
   ClientesRepositoryImpl(this._datasource);
 
   @override
-  Future<<Either<Failure, List<Cliente>>> obtenerClientes(String empresaId) async {
+  Future<Either<Failure, List<Cliente>>> obtenerClientes(String empresaId) async {
     try {
       final data = await _datasource.obtenerClientes(empresaId);
       return Right(data.map((e) => ClienteModel.fromJson(e).toEntity()).toList());
@@ -21,7 +21,7 @@ class ClientesRepositoryImpl implements ClientesRepository {
   }
 
   @override
-  Future<<Either<Failure, Cliente?>> buscarClientePorTelefono(String empresaId, String telefono) async {
+  Future<Either<Failure, Cliente?>> buscarClientePorTelefono(String empresaId, String telefono) async {
     try {
       final data = await _datasource.buscarClientePorTelefono(empresaId, telefono);
       if (data == null) return const Right(null);
@@ -32,7 +32,7 @@ class ClientesRepositoryImpl implements ClientesRepository {
   }
 
   @override
-  Future<<Either<Failure, Cliente>> crearCliente(Cliente cliente) async {
+  Future<Either<Failure, Cliente>> crearCliente(Cliente cliente) async {
     try {
       final model = ClienteModel(
         id: cliente.id,

@@ -11,7 +11,7 @@ class ProductosRepositoryImpl implements ProductosRepository {
   ProductosRepositoryImpl(this._datasource);
 
   @override
-  Future<<Either<Failure, List<Producto>>> obtenerProductos(String empresaId) async {
+  Future<Either<Failure, List<Producto>>> obtenerProductos(String empresaId) async {
     try {
       final data = await _datasource.obtenerProductos(empresaId);
       return Right(data.map((e) => ProductoModel.fromJson(e).toEntity()).toList());
@@ -21,7 +21,7 @@ class ProductosRepositoryImpl implements ProductosRepository {
   }
 
   @override
-  Future<<Either<Failure, Producto?>> obtenerProductoPorId(String id) async {
+  Future<Either<Failure, Producto?>> obtenerProductoPorId(String id) async {
     try {
       final data = await _datasource.obtenerProductoPorId(id);
       if (data == null) return const Right(null);

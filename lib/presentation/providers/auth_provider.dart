@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/core/usecases/usecase.dart';
+import 'package:guardaya_app/data/datasources/remote/auth_datasource.dart';
+import 'package:guardaya_app/data/repositories/implementations/auth_repository_impl.dart';
 import 'package:guardaya_app/domain/entities/usuario.dart';
+import 'package:guardaya_app/domain/repositories/auth_repository.dart';
 import 'package:guardaya_app/domain/usecases/auth/login_usuario.dart';
 import 'package:guardaya_app/domain/usecases/auth/logout_usuario.dart';
 import 'package:guardaya_app/domain/usecases/auth/obtener_usuario_actual.dart';
+
+final authDatasourceProvider = Provider<AuthDatasource>((ref) => AuthDatasource());
+final authRepositoryProvider = Provider<AuthRepository>((ref) => AuthRepositoryImpl(ref.watch(authDatasourceProvider)));
+
+final loginProvider = Provider<LoginUsuario>((ref) => LoginUsuario(ref.watch(authRepositoryProvider)));
+final logoutProvider = Provider<LogoutUsuario>((ref) => LogoutUsuario(ref.watch(authRepositoryProvider)));
+final obtenerUsuarioProvider = Provider<ObtenerUsuarioActual>((ref) => ObtenerUsuarioActual(ref.watch(authRepositoryProvider)));
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
@@ -12,21 +22,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
     logout: ref.watch(logoutProvider),
     obtenerUsuario: ref.watch(obtenerUsuarioProvider),
   );
-});
-
-final loginProvider = Provider<LoginUsuario>((ref) {
-  // TODO: Inyectar repositorio real
-  throw UnimplementedError();
-});
-
-final logoutProvider = Provider<LogoutUsuario>((ref) {
-  // TODO: Inyectar repositorio real
-  throw UnimplementedError();
-});
-
-final obtenerUsuarioProvider = Provider<ObtenerUsuarioActual>((ref) {
-  // TODO: Inyectar repositorio real
-  throw UnimplementedError();
 });
 
 class AuthState {

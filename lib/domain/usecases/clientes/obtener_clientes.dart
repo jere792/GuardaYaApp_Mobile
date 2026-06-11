@@ -9,7 +9,7 @@ class ObtenerClientes implements UseCase<List<Cliente>, String> {
   ObtenerClientes(this.repository);
 
   @override
-  Future<<Either<Failure, List<Cliente>>> call(String empresaId) async {
+  Future<Either<Failure, List<Cliente>>> call(String empresaId) async {
     return await repository.obtenerClientes(empresaId);
   }
 }

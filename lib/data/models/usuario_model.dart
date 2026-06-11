@@ -28,7 +28,7 @@ class UsuarioModel {
       username: json['username'] ?? '',
       nombre: json['nombre'] ?? '',
       email: json['email'],
-      rolId: json['rol_id'] ?? '',
+      rolId: json['rol_id'] ?? json['rol_nombre'] ?? '',
       activo: json['activo'] ?? true,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
     );

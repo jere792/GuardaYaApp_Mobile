@@ -17,7 +17,7 @@ class VentasRepositoryImpl implements VentasRepository {
   VentasRepositoryImpl(this._remote, this._local, this._connectivity);
 
   @override
-  Future<<Either<Failure, Venta>> registrarVenta(Venta venta) async {
+  Future<Either<Failure, Venta>> registrarVenta(Venta venta) async {
     try {
       if (await _connectivity.isOnline) {
         final model = VentaModel.fromEntity(venta);
@@ -47,7 +47,7 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
-  Future<<Either<Failure, List<Venta>>> obtenerVentasPorFecha(String empresaId, DateTime fecha) async {
+  Future<Either<Failure, List<Venta>>> obtenerVentasPorFecha(String empresaId, DateTime fecha) async {
     try {
       final data = await _remote.obtenerVentasPorFecha(empresaId, fecha);
       return Right(data.map((e) => VentaModel.fromJson(e).toEntity()).toList());
@@ -57,7 +57,7 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
-  Future<<Either<Failure, Venta?>> buscarVentaPorCodigo(String empresaId, String codigo) async {
+  Future<Either<Failure, Venta?>> buscarVentaPorCodigo(String empresaId, String codigo) async {
     try {
       final data = await _remote.buscarVentaPorCodigo(empresaId, codigo);
       if (data == null) return const Right(null);
@@ -68,7 +68,7 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
-  Future<<Either<Failure, List<Venta>>> buscarVentaPorTelefono(String empresaId, String telefono) async {
+  Future<Either<Failure, List<Venta>>> buscarVentaPorTelefono(String empresaId, String telefono) async {
     try {
       final data = await _remote.buscarVentaPorTelefono(empresaId, telefono);
       return Right(data.map((e) => VentaModel.fromJson(e).toEntity()).toList());
@@ -78,13 +78,13 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
-  Future<<Either<Failure, List<Venta>>> buscarVentaPorNombre(String empresaId, String nombre) async {
+  Future<Either<Failure, List<Venta>>> buscarVentaPorNombre(String empresaId, String nombre) async {
     // TODO: Implementar busqueda por nombre en Supabase
     return Left(ServerFailure('No implementado'));
   }
 
   @override
-  Future<<Either<Failure, void>> cambiarEstadoVenta(String ventaId, String nuevoEstado) async {
+  Future<Either<Failure, void>> cambiarEstadoVenta(String ventaId, String nuevoEstado) async {
     try {
       await _remote.cambiarEstadoVenta(ventaId, nuevoEstado);
       return const Right(null);
@@ -94,7 +94,7 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
-  Future<<Either<Failure, List<Venta>>> obtenerVentasPendientesSync() async {
+  Future<Either<Failure, List<Venta>>> obtenerVentasPendientesSync() async {
     try {
       final pending = await _local.getPendingVentas();
       return Right(pending.map((p) => Venta(
@@ -117,7 +117,7 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
-  Future<<Either<Failure, void>> syncVentasPendientes() async {
+  Future<Either<Failure, void>> syncVentasPendientes() async {
     try {
       if (await _connectivity.isOffline) {
         return Left(NoInternetFailure());

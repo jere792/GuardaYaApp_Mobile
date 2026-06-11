@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:guardaya_app/core/constants/app_constants.dart';
 
@@ -5,6 +6,8 @@ class SyncService {
   static const String syncTaskName = 'guardaya_sync_ventas';
 
   static Future<void> initialize() async {
+    // Workmanager no funciona en web
+    if (kIsWeb) return;
     await Workmanager().initialize(
       callbackDispatcher,
       isInDebugMode: false,
@@ -12,6 +15,7 @@ class SyncService {
   }
 
   static Future<void> registerPeriodicSync() async {
+    if (kIsWeb) return;
     await Workmanager().registerPeriodicTask(
       syncTaskName,
       syncTaskName,
@@ -24,6 +28,7 @@ class SyncService {
   }
 
   static Future<void> cancelSync() async {
+    if (kIsWeb) return;
     await Workmanager().cancelByUniqueName(syncTaskName);
   }
 }

@@ -9,7 +9,7 @@ class CambiarEstadoVenta implements UseCase<void, CambiarEstadoParams> {
   CambiarEstadoVenta(this.repository);
 
   @override
-  Future<<Either<Failure, void>> call(CambiarEstadoParams params) async {
+  Future<Either<Failure, void>> call(CambiarEstadoParams params) async {
     return await repository.cambiarEstadoVenta(params.ventaId, params.nuevoEstado);
   }
 }

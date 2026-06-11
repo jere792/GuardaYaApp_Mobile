@@ -9,7 +9,7 @@ class LoginUsuario implements UseCase<Usuario, LoginParams> {
   LoginUsuario(this.repository);
 
   @override
-  Future<<Either<Failure, Usuario>> call(LoginParams params) async {
+  Future<Either<Failure, Usuario>> call(LoginParams params) async {
     return await repository.login(params.username, params.password);
   }
 }

@@ -9,7 +9,7 @@ class BuscarVentaPorCodigo implements UseCase<Venta?, BuscarVentaPorCodigoParams
   BuscarVentaPorCodigo(this.repository);
 
   @override
-  Future<<Either<Failure, Venta?>> call(BuscarVentaPorCodigoParams params) async {
+  Future<Either<Failure, Venta?>> call(BuscarVentaPorCodigoParams params) async {
     return await repository.buscarVentaPorCodigo(params.empresaId, params.codigo);
   }
 }

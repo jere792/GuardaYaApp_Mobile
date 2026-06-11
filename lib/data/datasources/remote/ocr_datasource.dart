@@ -23,7 +23,6 @@ class OcrDatasource {
     await SupabaseService.storage.from('comprobantes').upload(
       path,
       imageFile,
-      fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
     );
     
     return SupabaseService.storage.from('comprobantes').getPublicUrl(path);

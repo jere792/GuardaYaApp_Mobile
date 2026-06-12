@@ -10,7 +10,6 @@ class SyncService {
     if (kIsWeb) return;
     await Workmanager().initialize(
       callbackDispatcher,
-      isInDebugMode: false,
     );
   }
 

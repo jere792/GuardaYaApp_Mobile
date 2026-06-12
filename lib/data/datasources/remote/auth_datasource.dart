@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
 

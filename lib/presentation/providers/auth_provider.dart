@@ -144,4 +144,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isOffline: offline);
     }
   }
+
+  /// Limpia el mensaje de error
+  void clearError() {
+    if (state.error != null) {
+      state = state.copyWith(error: null);
+    }
+  }
 }

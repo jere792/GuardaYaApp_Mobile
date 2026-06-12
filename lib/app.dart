@@ -13,6 +13,7 @@ import 'package:guardaya_app/presentation/pages/usuarios/crear_empleado_page.dar
 import 'package:guardaya_app/presentation/pages/usuarios/empleados_list_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/presentation/providers/theme_provider.dart';
 
 /// Define qué roles pueden acceder a cada ruta.
 /// super_admin tiene acceso a todo.
@@ -82,11 +83,14 @@ class GuardaYaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final empresaColors = ref.watch(empresaColorsSyncProvider);
+    final isDarkMode = ref.watch(themeProvider);
 
     return MaterialApp.router(
       title: 'GuardaYa',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme(empresaColors: empresaColors),
+      darkTheme: AppTheme.darkTheme(empresaColors: empresaColors),
+      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       routerConfig: router,
     );
   }

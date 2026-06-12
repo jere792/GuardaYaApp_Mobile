@@ -41,6 +41,9 @@ dependencies:
   # Secure Storage (Session)
   flutter_secure_storage: ^9.2.4
 
+  # Preferences
+  shared_preferences: ^2.5.3
+
   # Environment Variables (solo desarrollo, no usar en producción)
   flutter_dotenv: ^5.2.1
 

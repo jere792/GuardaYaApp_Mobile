@@ -33,9 +33,27 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
     final nombre = _nombreController.text.trim();
     final email = _emailController.text.trim();
 
-    if (username.isEmpty || password.isEmpty || nombre.isEmpty) {
+    if (username.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Complete todos los campos obligatorios')),
+        const SnackBar(content: Text('El usuario debe tener al menos 3 caracteres')),
+      );
+      return;
+    }
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres')),
+      );
+      return;
+    }
+    if (nombre.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El nombre es obligatorio')),
+      );
+      return;
+    }
+    if (email.isNotEmpty && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El email no es válido')),
       );
       return;
     }

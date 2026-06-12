@@ -8,16 +8,23 @@ import 'package:guardaya_app/services/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Cargar variables de entorno
-  await dotenv.load(fileName: '.env');
-  
+
+  // Cargar variables de entorno (.env para desarrollo)
+  // En producción con --dart-define, dotenv buscará el archivo pero
+  // api_constants usará las variables compiladas
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    // Si .env no existe o falla, continuar igual
+    // (usará --dart-define si está disponible)
+  }
+
   // Inicializar Supabase
   await SupabaseService.initialize();
-  
+
   // Inicializar WorkManager para sync en background
   await SyncService.initialize();
-  
+
   // Crear un container para hacer checkAuth antes de runApp
   final container = ProviderContainer();
   try {
@@ -25,7 +32,7 @@ void main() async {
   } catch (e) {
     // Ignorar errores de checkAuth, la app seguirá al login
   }
-  
+
   runApp(
     UncontrolledProviderScope(
       container: container,

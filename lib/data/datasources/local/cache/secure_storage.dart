@@ -54,6 +54,36 @@ class SecureStorage {
     await _storage.delete(key: AppConstants.empresaColorsKey);
   }
 
+  static Future<void> saveRefreshToken(String refreshToken) async {
+    await _storage.write(key: 'refresh_token', value: refreshToken);
+  }
+
+  static Future<String?> getRefreshToken() async {
+    return await _storage.read(key: 'refresh_token');
+  }
+
+  static Future<void> deleteRefreshToken() async {
+    await _storage.delete(key: 'refresh_token');
+  }
+
+  static Future<void> saveTokenExpiresAt(DateTime expiresAt) async {
+    await _storage.write(key: 'token_expires_at', value: expiresAt.toIso8601String());
+  }
+
+  static Future<DateTime?> getTokenExpiresAt() async {
+    final value = await _storage.read(key: 'token_expires_at');
+    return value != null ? DateTime.tryParse(value) : null;
+  }
+
+  static Future<bool> getOfflineMode() async {
+    final value = await _storage.read(key: 'offline_mode');
+    return value == 'true';
+  }
+
+  static Future<void> setOfflineMode(bool value) async {
+    await _storage.write(key: 'offline_mode', value: value.toString());
+  }
+
   static Future<void> clearAll() async {
     await _storage.deleteAll();
   }

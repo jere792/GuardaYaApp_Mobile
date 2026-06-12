@@ -5,48 +5,63 @@ class VentasDatasource {
     final inicio = DateTime(fecha.year, fecha.month, fecha.day).toIso8601String();
     final fin = DateTime(fecha.year, fecha.month, fecha.day, 23, 59, 59).toIso8601String();
     
-    final response = await SupabaseService.from('ventas')
-      .select()
-      .eq('empresa_id', empresaId)
-      .gte('created_at', inicio)
-      .lte('created_at', fin)
-      .order('created_at', ascending: false);
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .select()
+        .eq('empresa_id', empresaId)
+        .gte('created_at', inicio)
+        .lte('created_at', fin)
+        .order('created_at', ascending: false),
+      operation: 'obtenerVentasPorFecha',
+    );
     
     return List<Map<String, dynamic>>.from(response);
   }
 
   Future<Map<String, dynamic>?> buscarVentaPorCodigo(String empresaId, String codigo) async {
-    final response = await SupabaseService.from('ventas')
-      .select()
-      .eq('empresa_id', empresaId)
-      .eq('codigo_yape', codigo)
-      .maybeSingle();
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .select()
+        .eq('empresa_id', empresaId)
+        .eq('codigo_yape', codigo)
+        .maybeSingle(),
+      operation: 'buscarVentaPorCodigo',
+    );
     
     return response;
   }
 
   Future<List<Map<String, dynamic>>> buscarVentaPorTelefono(String empresaId, String telefono) async {
-    final response = await SupabaseService.from('ventas')
-      .select()
-      .eq('empresa_id', empresaId)
-      .ilike('cliente_telefono', '%$telefono%')
-      .order('created_at', ascending: false);
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .select()
+        .eq('empresa_id', empresaId)
+        .ilike('cliente_telefono', '%$telefono%')
+        .order('created_at', ascending: false),
+      operation: 'buscarVentaPorTelefono',
+    );
     
     return List<Map<String, dynamic>>.from(response);
   }
 
   Future<Map<String, dynamic>> registrarVenta(Map<String, dynamic> venta) async {
-    final response = await SupabaseService.from('ventas')
-      .insert(venta)
-      .select()
-      .single();
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .insert(venta)
+        .select()
+        .single(),
+      operation: 'registrarVenta',
+    );
     
     return response;
   }
 
   Future<void> cambiarEstadoVenta(String ventaId, String nuevoEstado) async {
-    await SupabaseService.from('ventas')
-      .update({'estado': nuevoEstado, 'updated_at': DateTime.now().toIso8601String()})
-      .eq('id', ventaId);
+    await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .update({'estado': nuevoEstado, 'updated_at': DateTime.now().toIso8601String()})
+        .eq('id', ventaId),
+      operation: 'cambiarEstadoVenta',
+    );
   }
 }

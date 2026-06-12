@@ -17,15 +17,21 @@ class EmpresaColors {
 
   factory EmpresaColors.fromJson(Map<String, dynamic> json) {
     return EmpresaColors(
-      primary: _hexToColor(json['color_primario'] ?? '#FF6B00'),
-      secondary: _hexToColor(json['color_secundario'] ?? '#2D2D2D'),
-      accent: _hexToColor(json['color_acento'] ?? '#00B4D8'),
+      primary: _safeHexToColor(json['color_primario'] ?? '#FF6B00'),
+      secondary: _safeHexToColor(json['color_secundario'] ?? '#2D2D2D'),
+      accent: _safeHexToColor(json['color_acento'] ?? '#00B4D8'),
     );
   }
 
-  static Color _hexToColor(String hex) {
-    hex = hex.replaceAll('#', '');
-    if (hex.length == 6) hex = 'FF$hex';
-    return Color(int.parse(hex, radix: 16));
+  static Color _safeHexToColor(String? hex) {
+    try {
+      if (hex == null) return const Color(0xFFFF6B00);
+      hex = hex.replaceAll('#', '');
+      if (hex.length == 6) hex = 'FF$hex';
+      return Color(int.parse(hex, radix: 16));
+    } catch (e) {
+      return const Color(0xFFFF6B00); // fallback naranja
+    }
   }
+
 }

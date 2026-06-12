@@ -17,22 +17,38 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, Usuario>> login(String username, String password) async {
     try {
-      final data = await _datasource.login(username, password);
-      final token = data['token'] as String?;
-      final usuario = UsuarioModel.fromJson(data['usuario'] as Map<String, dynamic>);
-      
-      if (token != null) {
-        await SecureStorage.saveSession(token);
-        await SecureStorage.saveEmpresaId(usuario.empresaId ?? '');
-        await SecureStorage.saveUser(jsonEncode(usuario.toJson()));
-        
-        // Guardar colores de empresa si existen
-        final empresaData = data['empresa'];
-        if (empresaData != null) {
-          await SecureStorage.saveEmpresaColors(jsonEncode(empresaData));
-        }
+      // 1. Login con Supabase Auth nativo (JWT real)
+      final authResponse = await _datasource.login(username, password);
+      final session = authResponse.session;
+
+      if (session == null) {
+        return Left(AuthFailure('No se obtuvo sesión'));
       }
-      
+
+      // 2. Guardar JWT y refresh token
+      await SecureStorage.saveSession(session.accessToken);
+      if (session.refreshToken != null) {
+        await SecureStorage.saveRefreshToken(session.refreshToken!);
+      }
+      if (session.expiresAt != null) {
+        await SecureStorage.saveTokenExpiresAt(
+          DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000),
+        );
+      }
+      await SecureStorage.setOfflineMode(false);
+
+      // 3. Obtener datos de usuario, empresa y colores
+      final userData = await _datasource.getUsuarioCompleto();
+      final usuario = UsuarioModel.fromJson(userData);
+      final empresaData = userData['empresa'] as Map<String, dynamic>?;
+
+      // 4. Guardar en local storage
+      await SecureStorage.saveUser(jsonEncode(usuario.toJson()));
+      await SecureStorage.saveEmpresaId(usuario.empresaId ?? '');
+      if (empresaData != null) {
+        await SecureStorage.saveEmpresaColors(jsonEncode(empresaData));
+      }
+
       return Right(usuario.toEntity());
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
@@ -44,6 +60,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
+      await _datasource.logout();
       await SecureStorage.clearAll();
       return const Right(null);
     } catch (e) {
@@ -68,20 +85,96 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final userJson = await SecureStorage.getUser();
       if (userJson == null) return const Right(null);
-      
+
       final map = jsonDecode(userJson) as Map<String, dynamic>;
       final usuario = UsuarioModel.fromJson(map).toEntity();
+
       return Right(usuario);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }
   }
 
+  /// Verifica la sesión con el servidor.
+  /// Si hay internet y el usuario está activo, devuelve true.
+  /// Si no hay internet, mantiene la sesión local (modo offline).
+  /// Si hay internet pero el usuario está inactivo, desloguea.
   @override
   Future<Either<Failure, bool>> isAuthenticated() async {
     try {
       final token = await SecureStorage.getSession();
-      return Right(token != null);
+      if (token == null) return const Right(false);
+
+      final expiresAt = await SecureStorage.getTokenExpiresAt();
+      if (expiresAt != null && expiresAt.isBefore(DateTime.now())) {
+        // Token expirado, intentar renovar
+        final refreshToken = await SecureStorage.getRefreshToken();
+        if (refreshToken != null) {
+          try {
+            final authResponse = await _datasource.refreshSession(refreshToken);
+            final session = authResponse.session;
+            if (session != null) {
+              await SecureStorage.saveSession(session.accessToken);
+              if (session.refreshToken != null) {
+                await SecureStorage.saveRefreshToken(session.refreshToken!);
+              }
+              if (session.expiresAt != null) {
+                await SecureStorage.saveTokenExpiresAt(
+                  DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000),
+                );
+              }
+            }
+          } catch (e) {
+            // Si falla el refresh, desloguear
+            await SecureStorage.clearAll();
+            return const Right(false);
+          }
+        }
+      }
+
+      // Verificar con servidor si hay conectividad
+      final isActive = await _datasource.verifyUsuarioActivo();
+      if (isActive) {
+        await SecureStorage.setOfflineMode(false);
+        return const Right(true);
+      }
+
+      // Si no hay internet o el servidor no responde, confiar en sesión local
+      // (modo offline)
+      return const Right(true);
+    } catch (e) {
+      // En caso de error (probablemente no hay internet), confiar en sesión local
+      return const Right(true);
+    }
+  }
+
+  /// Intenta refrescar la sesión antes de que expire.
+  Future<Either<Failure, bool>> refreshSessionIfNeeded() async {
+    try {
+      final expiresAt = await SecureStorage.getTokenExpiresAt();
+      if (expiresAt == null) return const Right(false);
+
+      // Si expira en menos de 5 minutos, renovar
+      if (expiresAt.difference(DateTime.now()).inMinutes < 5) {
+        final refreshToken = await SecureStorage.getRefreshToken();
+        if (refreshToken == null) return const Right(false);
+
+        final authResponse = await _datasource.refreshSession(refreshToken);
+        final session = authResponse.session;
+        if (session != null) {
+          await SecureStorage.saveSession(session.accessToken);
+          if (session.refreshToken != null) {
+            await SecureStorage.saveRefreshToken(session.refreshToken!);
+          }
+          if (session.expiresAt != null) {
+            await SecureStorage.saveTokenExpiresAt(
+              DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000),
+            );
+          }
+          return const Right(true);
+        }
+      }
+      return const Right(true);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }

@@ -16,7 +16,9 @@ import 'package:guardaya_app/presentation/pages/usuarios/empleados_list_page.dar
 import 'package:guardaya_app/presentation/pages/categorias/categoria_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/categorias/categoria_form_page.dart';
 import 'package:guardaya_app/presentation/pages/categorias/categorias_list_page.dart';
-import 'package:guardaya_app/presentation/pages/clientes/clientes_page.dart';
+import 'package:guardaya_app/presentation/pages/clientes/cliente_detail_page.dart';
+import 'package:guardaya_app/presentation/pages/clientes/cliente_form_page.dart';
+import 'package:guardaya_app/presentation/pages/clientes/clientes_list_page.dart';
 import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
@@ -42,6 +44,9 @@ const Map<String, List<String>> _routeRoles = {
   '/categorias/:id': ['super_admin', 'admin', 'empleado'],
   '/categorias/editar/:id': ['super_admin', 'admin'],
   '/clientes': ['super_admin', 'admin', 'empleado'],
+  '/clientes/crear': ['super_admin', 'admin', 'empleado'],
+  '/clientes/:id': ['super_admin', 'admin', 'empleado'],
+  '/clientes/editar/:id': ['super_admin', 'admin', 'empleado'],
 };
 
 bool _isRouteAllowed(String route, String? rol) {
@@ -60,6 +65,10 @@ bool _isRouteAllowed(String route, String? rol) {
     normalizedRoute = '/categorias/editar/:id';
   } else if (route.startsWith('/categorias/') && route != '/categorias/crear') {
     normalizedRoute = '/categorias/:id';
+  } else if (route.startsWith('/clientes/editar/')) {
+    normalizedRoute = '/clientes/editar/:id';
+  } else if (route.startsWith('/clientes/') && route != '/clientes/crear') {
+    normalizedRoute = '/clientes/:id';
   }
   final allowed = _routeRoles[normalizedRoute];
   return allowed != null && allowed.contains(rol);
@@ -124,7 +133,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/categorias/editar/:id',
         builder: (context, state) => CategoriaFormPage(categoriaId: state.pathParameters['id']!),
       ),
-      GoRoute(path: '/clientes', builder: (context, state) => const ClientesPage()),
+      GoRoute(path: '/clientes', builder: (context, state) => const ClientesListPage()),
+      GoRoute(
+        path: '/clientes/crear',
+        builder: (context, state) => const ClienteFormPage(),
+      ),
+      GoRoute(
+        path: '/clientes/:id',
+        builder: (context, state) => ClienteDetailPage(clienteId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/clientes/editar/:id',
+        builder: (context, state) => ClienteFormPage(clienteId: state.pathParameters['id']!),
+      ),
       GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),
     ],
   );

@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/core/errors/failures.dart';
 import 'package:guardaya_app/data/datasources/remote/clientes_datasource.dart';
 import 'package:guardaya_app/data/models/cliente_model.dart';
@@ -9,6 +10,21 @@ class ClientesRepositoryImpl implements ClientesRepository {
   final ClientesDatasource _datasource;
 
   ClientesRepositoryImpl(this._datasource);
+
+  @override
+  Future<Either<Failure, List<Cliente>>> listarClientes(String empresaId) async {
+    try {
+      final list = await _datasource.listarClientes(empresaId);
+      final clientes = list
+          .map((json) => ClienteModel.fromJson(json as Map<String, dynamic>).toEntity())
+          .toList();
+      return Right(clientes);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, List<Cliente>>> obtenerClientes(String empresaId) async {
@@ -35,6 +51,29 @@ class ClientesRepositoryImpl implements ClientesRepository {
   Future<Either<Failure, Cliente>> crearCliente(Cliente cliente) async {
     try {
       final model = ClienteModel(
+        id: '',
+        empresaId: cliente.empresaId,
+        nombre: cliente.nombre,
+        telefono: cliente.telefono,
+        email: cliente.email,
+        direccion: cliente.direccion,
+        notas: cliente.notas,
+        activo: true,
+        createdAt: DateTime.now(),
+      );
+      final data = await _datasource.crearCliente(model.toInsertJson());
+      return Right(ClienteModel.fromJson(data).toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Cliente>> actualizarCliente(Cliente cliente) async {
+    try {
+      final model = ClienteModel(
         id: cliente.id,
         empresaId: cliente.empresaId,
         nombre: cliente.nombre,
@@ -45,8 +84,22 @@ class ClientesRepositoryImpl implements ClientesRepository {
         activo: cliente.activo,
         createdAt: cliente.createdAt,
       );
-      final data = await _datasource.crearCliente(model.toJson());
+      final data = await _datasource.actualizarCliente(cliente.id, model.toUpdateJson());
       return Right(ClienteModel.fromJson(data).toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> desactivarCliente(String clienteId) async {
+    try {
+      await _datasource.desactivarCliente(clienteId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

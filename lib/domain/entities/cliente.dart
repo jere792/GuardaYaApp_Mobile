@@ -23,6 +23,30 @@ class Cliente extends Equatable {
     required this.createdAt,
   });
 
+  Cliente copyWith({
+    String? id,
+    String? empresaId,
+    String? nombre,
+    String? telefono,
+    String? email,
+    String? direccion,
+    String? notas,
+    bool? activo,
+    DateTime? createdAt,
+  }) {
+    return Cliente(
+      id: id ?? this.id,
+      empresaId: empresaId ?? this.empresaId,
+      nombre: nombre ?? this.nombre,
+      telefono: telefono ?? this.telefono,
+      email: email ?? this.email,
+      direccion: direccion ?? this.direccion,
+      notas: notas ?? this.notas,
+      activo: activo ?? this.activo,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   @override
   List<Object?> get props => [id, empresaId, nombre, telefono, email, direccion, notas, activo, createdAt];
 }

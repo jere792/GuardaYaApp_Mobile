@@ -51,6 +51,27 @@ class ClienteModel {
     };
   }
 
+  Map<String, dynamic> toInsertJson() {
+    return {
+      'empresa_id': empresaId,
+      'nombre': nombre,
+      if (telefono != null) 'telefono': telefono,
+      if (email != null) 'email': email,
+      if (direccion != null) 'direccion': direccion,
+      if (notas != null) 'notas': notas,
+    };
+  }
+
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      'nombre': nombre,
+      if (telefono != null) 'telefono': telefono,
+      if (email != null) 'email': email,
+      if (direccion != null) 'direccion': direccion,
+      if (notas != null) 'notas': notas,
+    };
+  }
+
   Cliente toEntity() => Cliente(
     id: id,
     empresaId: empresaId,

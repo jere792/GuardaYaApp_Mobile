@@ -13,6 +13,8 @@ import 'package:guardaya_app/presentation/pages/usuarios/crear_empleado_page.dar
 import 'package:guardaya_app/presentation/pages/usuarios/empleado_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/empleado_edit_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/empleados_list_page.dart';
+import 'package:guardaya_app/presentation/pages/categorias/categorias_page.dart';
+import 'package:guardaya_app/presentation/pages/clientes/clientes_page.dart';
 import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
@@ -33,6 +35,8 @@ const Map<String, List<String>> _routeRoles = {
   '/empleados/crear': ['super_admin', 'admin'],
   '/empleados/detalle/:id': ['super_admin', 'admin', 'empleado'],
   '/empleados/editar/:id': ['super_admin', 'admin'],
+  '/categorias': ['super_admin', 'admin'],
+  '/clientes': ['super_admin', 'admin', 'empleado'],
 };
 
 bool _isRouteAllowed(String route, String? rol) {
@@ -98,6 +102,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // Página temporal para crear usuarios en Supabase Auth
       // TODO: Eliminar después de crear los usuarios
+      GoRoute(path: '/categorias', builder: (context, state) => const CategoriasPage()),
+      GoRoute(path: '/clientes', builder: (context, state) => const ClientesPage()),
       GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),
     ],
   );

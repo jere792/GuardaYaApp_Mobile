@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/data/models/empresa_colors.dart';
+import 'package:guardaya_app/domain/entities/usuario.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/usuarios_provider.dart';
@@ -17,18 +18,33 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
   @override
   void initState() {
     super.initState();
-    _cargarEmpleados();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _cargarEmpleados());
   }
 
   void _cargarEmpleados() {
-    final empresaId = ref.read(authProvider).usuario?.empresaId;
-    if (empresaId != null && empresaId.isNotEmpty) {
-      ref.read(usuariosProvider.notifier).cargarEmpleados(empresaId);
+    final authState = ref.read(authProvider);
+    final usuario = authState.usuario;
+    final rol = usuario?.rolId ?? 'empleado';
+    final empresaId = usuario?.empresaId;
+
+    if (rol == 'super_admin') {
+      // super_admin: lista TODOS los usuarios de TODAS las empresas
+      ref.read(usuariosProvider.notifier).cargarEmpleados(null, rol);
+    } else if (empresaId != null && empresaId.isNotEmpty) {
+      // admin: solo empleados de su empresa
+      ref.read(usuariosProvider.notifier).cargarEmpleados(empresaId, rol);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Escuchar cuando authProvider termine de cargar para recargar empleados
+    ref.listen(authProvider, (previous, next) {
+      if (previous?.isLoading == true && next.isLoading == false && next.usuario != null) {
+        _cargarEmpleados();
+      }
+    });
+
     final usuariosState = ref.watch(usuariosProvider);
     final empleados = usuariosState.usuarios;
     final empresaColors = ref.watch(empresaColorsSyncProvider);
@@ -104,7 +120,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
     );
   }
 
-  void _confirmarDesactivar(BuildContext context, dynamic emp) {
+  void _confirmarDesactivar(BuildContext context, Usuario emp) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -142,7 +158,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
 }
 
 class _EmpleadoCard extends StatelessWidget {
-  final dynamic empleado;
+  final Usuario empleado;
   final EmpresaColors colors;
   final String rolActual;
   final VoidCallback onDesactivar;
@@ -160,12 +176,14 @@ class _EmpleadoCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
+        child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: empleado.activo ? colors.primary : Colors.grey,
           foregroundColor: Colors.white,
-          child: Text(empleado.nombre.substring(0, 1).toUpperCase()),
+          child: Text(
+            (empleado.nombre.isNotEmpty ? empleado.nombre.substring(0, 1) : '?').toUpperCase(),
+          ),
         ),
         title: Text(
           empleado.nombre,

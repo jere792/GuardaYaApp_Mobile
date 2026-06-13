@@ -1,8 +1,10 @@
+import 'dart:developer';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
 
 class UsuarioDatasource {
+  /// Crear usuario usando RPC con bcrypt (seguro para login).
   Future<Map<String, dynamic>> crearUsuario({
     required String username,
     required String password,
@@ -37,32 +39,55 @@ class UsuarioDatasource {
     }
   }
 
-  Future<List<dynamic>> listarUsuarios(String empresaId) async {
+  /// Listar usuarios.
+  /// Si es super_admin (rol == 'super_admin'), lista TODOS los usuarios.
+  /// Si es admin, lista solo los de su empresa.
+  Future<List<dynamic>> listarUsuarios(String? empresaId, String rol) async {
     try {
-      final data = await SupabaseService.rpc(
-        'listar_usuarios_rpc',
-        params: {
-          'p_empresa_id': empresaId,
-        },
+      log('UsuarioDatasource.listarUsuarios: rol=$rol, empresaId=$empresaId');
+
+      final query = SupabaseService.from('usuarios').select();
+
+      if (rol != 'super_admin') {
+        // Admin: solo usuarios de su empresa
+        if (empresaId == null || empresaId.isEmpty) {
+          log('UsuarioDatasource.listarUsuarios: ERROR - empresaId es null/vacio para admin');
+          throw ServerException(message: 'El admin no tiene empresa asignada');
+        }
+        query.eq('empresa_id', empresaId);
+      } else {
+        log('UsuarioDatasource.listarUsuarios: super_admin - sin filtro de empresa');
+      }
+
+      final response = await SupabaseService.withTimeout(
+        query.order('created_at', ascending: false),
+        operation: 'listarUsuarios',
       );
-      // El RPC devuelve un JSONB array, Supabase lo parsea como List<dynamic>
-      return data as List<dynamic>;
+
+      log('UsuarioDatasource.listarUsuarios: response length=${(response as List).length}');
+      return List<dynamic>.from(response);
     } on PostgrestException catch (e) {
+      log('UsuarioDatasource.listarUsuarios: PostgrestException - ${e.message}');
       throw ServerException(message: e.message);
     } catch (e) {
+      log('UsuarioDatasource.listarUsuarios: Exception - $e');
       throw ServerException(message: e.toString());
     }
   }
 
+  /// Desactivar usuario (query directa)
   Future<Map<String, dynamic>> desactivarUsuario(String userId) async {
     try {
-      final data = await SupabaseService.rpc(
-        'desactivar_usuario_rpc',
-        params: {
-          'p_user_id': userId,
-        },
+      await SupabaseService.withTimeout(
+        SupabaseService.from('usuarios')
+            .update({
+              'activo': false,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', userId),
+        operation: 'desactivarUsuario',
       );
-      return data as Map<String, dynamic>;
+      return {'success': true};
     } on PostgrestException catch (e) {
       throw ServerException(message: e.message);
     } catch (e) {

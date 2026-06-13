@@ -17,6 +17,7 @@ El proyecto sigue una arquitectura **Clean Architecture** con **Domain-Driven De
 - [Enfoque](./enfoque.md) - Visión y principios del proyecto
 - [Problemática](./problematica.md) - Problemas que resuelve GuardaYa
 - [Roadmap](./roadmap.md) - Estado actual y plan de desarrollo
+- [Supabase Functions](./supabase_functions.md) - Funciones RPC, RLS y acceso a datos
 - [Versiones](./versiones.md) - Versiones de dependencias y tecnologías
 
 ## Tecnologías Principales

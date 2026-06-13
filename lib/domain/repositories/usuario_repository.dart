@@ -14,7 +14,7 @@ abstract class UsuarioRepository {
     required String rolNombre,
   });
 
-  Future<Either<Failure, List<Usuario>>> listarUsuarios(String empresaId);
+  Future<Either<Failure, List<Usuario>>> listarUsuarios(String? empresaId, String rol);
 
   Future<Either<Failure, void>> desactivarUsuario(String userId);
 }

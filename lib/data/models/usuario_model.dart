@@ -26,17 +26,37 @@ class UsuarioModel {
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseCreatedAt(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is DateTime) return value;
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
+    bool parseActivo(dynamic value) {
+      if (value == null) return true;
+      if (value is bool) return value;
+      if (value is String) return value.toLowerCase() == 'true';
+      return true;
+    }
+
     return UsuarioModel(
-      id: json['id'] ?? '',
-      empresaId: json['empresa_id'],
-      username: json['username'] ?? '',
-      nombre: json['nombre'] ?? '',
-      apellidos: json['apellidos'],
-      telefono: json['telefono'],
-      email: json['email'],
-      rolId: json['rol_id'] ?? json['rol_nombre'] ?? '',
-      activo: json['activo'] ?? true,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      id: json['id']?.toString() ?? '',
+      empresaId: json['empresa_id']?.toString(),
+      username: json['username']?.toString() ?? '',
+      nombre: json['nombre']?.toString() ?? '',
+      apellidos: json['apellidos']?.toString(),
+      telefono: json['telefono']?.toString(),
+      email: json['email']?.toString(),
+      rolId: json['rol_id']?.toString() ?? json['rol_nombre']?.toString() ?? '',
+      activo: parseActivo(json['activo']),
+      createdAt: parseCreatedAt(json['created_at']),
     );
   }
 

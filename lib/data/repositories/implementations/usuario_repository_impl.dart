@@ -43,9 +43,9 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
   }
 
   @override
-  Future<Either<Failure, List<Usuario>>> listarUsuarios(String empresaId) async {
+  Future<Either<Failure, List<Usuario>>> listarUsuarios(String? empresaId, String rol) async {
     try {
-      final list = await _datasource.listarUsuarios(empresaId);
+      final list = await _datasource.listarUsuarios(empresaId, rol);
       final usuarios = list
           .map((json) => UsuarioModel.fromJson(json as Map<String, dynamic>).toEntity())
           .toList();

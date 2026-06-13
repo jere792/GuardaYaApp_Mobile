@@ -10,11 +10,12 @@ class ListarUsuarios implements UseCase<List<Usuario>, ListarUsuariosParams> {
 
   @override
   Future<Either<Failure, List<Usuario>>> call(ListarUsuariosParams params) async {
-    return await repository.listarUsuarios(params.empresaId);
+    return await repository.listarUsuarios(params.empresaId, params.rol);
   }
 }
 
 class ListarUsuariosParams {
-  final String empresaId;
-  ListarUsuariosParams({required this.empresaId});
+  final String? empresaId;
+  final String rol;
+  ListarUsuariosParams({this.empresaId, required this.rol});
 }

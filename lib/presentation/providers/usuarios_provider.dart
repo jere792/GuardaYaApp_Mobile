@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/data/datasources/remote/usuario_datasource.dart';
 import 'package:guardaya_app/data/repositories/implementations/usuario_repository_impl.dart';
@@ -89,13 +90,19 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
     );
   }
 
-  Future<void> cargarEmpleados(String empresaId) async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await _listar(ListarUsuariosParams(empresaId: empresaId));
-    result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (usuarios) => state = state.copyWith(isLoading: false, usuarios: usuarios),
-    );
+  Future<void> cargarEmpleados(String? empresaId, String rol) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final result = await _listar(ListarUsuariosParams(empresaId: empresaId, rol: rol));
+      result.fold(
+        (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+        (usuarios) => state = state.copyWith(isLoading: false, usuarios: usuarios),
+      );
+    } catch (e, stackTrace) {
+      state = state.copyWith(isLoading: false, error: 'Error inesperado: $e');
+      debugPrint('UsuariosNotifier.cargarEmpleados: ERROR - $e');
+      debugPrint('StackTrace: $stackTrace');
+    }
   }
 
   Future<void> desactivarEmpleado(String userId) async {

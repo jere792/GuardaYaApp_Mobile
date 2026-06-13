@@ -39,6 +39,10 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
         title: const Text('Empleados'),
         backgroundColor: empresaColors.primary,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

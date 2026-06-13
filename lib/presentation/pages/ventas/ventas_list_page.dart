@@ -62,6 +62,10 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
         title: const Text('Ventas'),
         backgroundColor: empresaColors.primary,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_today),

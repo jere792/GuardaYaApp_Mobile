@@ -108,6 +108,10 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
         title: const Text('Crear Empleado'),
         backgroundColor: empresaColors.primary,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

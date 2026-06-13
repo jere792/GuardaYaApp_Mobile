@@ -94,11 +94,9 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final usuariosState = ref.watch(usuariosProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
 
-    // Solo admin puede crear empleado, super_admin puede crear empleado y admin
     final rolesDisponibles = <String>['empleado'];
     if (rolActual == 'super_admin') rolesDisponibles.add('admin');
     if (rolActual == 'admin') rolesDisponibles.add('admin');
@@ -106,7 +104,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Crear Empleado'),
-        backgroundColor: empresaColors.primary,
+        backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -124,7 +122,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
                 labelText: 'Usuario *',
                 prefixIcon: const Icon(Icons.person),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: empresaColors.primary),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
               ),
             ),
@@ -136,7 +134,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
                 labelText: 'Contraseña *',
                 prefixIcon: const Icon(Icons.lock),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: empresaColors.primary),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
               ),
             ),
@@ -147,7 +145,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
                 labelText: 'Nombre completo *',
                 prefixIcon: const Icon(Icons.badge),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: empresaColors.primary),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
               ),
             ),
@@ -158,7 +156,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
                 labelText: 'Email',
                 prefixIcon: const Icon(Icons.email),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: empresaColors.primary),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -170,7 +168,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
                 labelText: 'Rol',
                 prefixIcon: const Icon(Icons.security),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: empresaColors.primary),
+                  borderSide: BorderSide(color: colorScheme.primary),
                 ),
               ),
               items: rolesDisponibles.map((rol) => DropdownMenuItem(
@@ -182,22 +180,26 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
               },
             ),
             const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: usuariosState.isLoading ? null : _handleSubmit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: empresaColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: usuariosState.isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Crear Empleado', style: TextStyle(fontSize: 16)),
-            ),
+            Consumer(builder: (context, ref, _) {
+              final state = ref.watch(usuariosProvider);
+              final colors = ref.watch(empresaColorsSyncProvider);
+              return ElevatedButton(
+                onPressed: state.isLoading ? null : _handleSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: state.isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Crear Empleado', style: TextStyle(fontSize: 16)),
+              );
+            }),
           ],
         ),
       ),

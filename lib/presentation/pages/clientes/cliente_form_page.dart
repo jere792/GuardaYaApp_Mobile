@@ -125,14 +125,12 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
-    final state = ref.watch(clientesProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Editar Cliente' : 'Nuevo Cliente'),
-        backgroundColor: empresaColors.primary,
+        backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -205,20 +203,24 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: state.isLoading ? null : _guardar,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: empresaColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+            Consumer(builder: (context, ref, _) {
+              final state = ref.watch(clientesProvider);
+              final colors = ref.watch(empresaColorsSyncProvider);
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: state.isLoading ? null : _guardar,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: state.isLoading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(_isEditing ? 'Guardar Cambios' : 'Crear Cliente', style: const TextStyle(fontSize: 16)),
                 ),
-                child: state.isLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(_isEditing ? 'Guardar Cambios' : 'Crear Cliente', style: const TextStyle(fontSize: 16)),
-              ),
-            ),
+              );
+            }),
           ],
         ),
       ),

@@ -32,7 +32,6 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
   Widget build(BuildContext context) {
     final usuariosState = ref.watch(usuariosProvider);
     final empleado = usuariosState.usuarios.where((u) => u.id == widget.empleadoId).firstOrNull;
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     if (empleado == null) {
@@ -52,7 +51,7 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Editar Empleado'),
-        backgroundColor: empresaColors.primary,
+        backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -77,23 +76,26 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
             const SizedBox(height: 16),
             _buildField('Teléfono', _telefonoController, Icons.phone, keyboardType: TextInputType.phone),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cambios guardados')),
-                  );
-                  context.pop();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: empresaColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+            Consumer(builder: (context, ref, _) {
+              final colors = ref.watch(empresaColorsSyncProvider);
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Cambios guardados')),
+                    );
+                    context.pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('Guardar Cambios', style: TextStyle(fontSize: 16)),
                 ),
-                child: const Text('Guardar Cambios', style: TextStyle(fontSize: 16)),
-              ),
-            ),
+              );
+            }),
           ],
         ),
       ),

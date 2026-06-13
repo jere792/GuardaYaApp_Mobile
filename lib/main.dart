@@ -32,6 +32,9 @@ void main() async {
   } catch (e) {
     // Ignorar errores de checkAuth, la app seguirá al login
   }
+  
+  // Asegurar que el estado de loading esté limpio al iniciar
+  container.read(authProvider.notifier).clearError();
 
   runApp(
     UncontrolledProviderScope(

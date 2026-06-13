@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/core/errors/failures.dart';
@@ -17,9 +18,13 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, Usuario>> login(String username, String password) async {
     try {
+      debugPrint('AuthRepositoryImpl.login: Starting login for $username');
+      
       // 1. Login con Supabase Auth nativo (JWT real)
       final authResponse = await _datasource.login(username, password);
       final session = authResponse.session;
+
+      debugPrint('AuthRepositoryImpl.login: Session=${session != null}');
 
       if (session == null) {
         return Left(AuthFailure('No se obtuvo sesión'));
@@ -38,7 +43,10 @@ class AuthRepositoryImpl implements AuthRepository {
       await SecureStorage.setOfflineMode(false);
 
       // 3. Obtener datos de usuario, empresa y colores
+      debugPrint('AuthRepositoryImpl.login: Getting user data...');
       final userData = await _datasource.getUsuarioCompleto();
+      debugPrint('AuthRepositoryImpl.login: User data=$userData');
+      
       final usuario = UsuarioModel.fromJson(userData);
       final empresaData = userData['empresa'] as Map<String, dynamic>?;
 
@@ -49,11 +57,14 @@ class AuthRepositoryImpl implements AuthRepository {
         await SecureStorage.saveEmpresaColors(jsonEncode(empresaData));
       }
 
+      debugPrint('AuthRepositoryImpl.login: Success!');
       return Right(usuario.toEntity());
-    } on AuthException catch (e) {
-      return Left(AuthFailure(e.message));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+    } on AuthException catch (_) {
+      debugPrint('AuthRepositoryImpl.login: AuthException - Invalid credentials');
+      return Left(AuthFailure('Usuario o contraseña incorrectos'));
+    } catch (_) {
+      debugPrint('AuthRepositoryImpl.login: Exception - Connection error');
+      return Left(ServerFailure('Error de conexión'));
     }
   }
 

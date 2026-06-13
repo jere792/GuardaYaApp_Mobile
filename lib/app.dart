@@ -11,6 +11,7 @@ import 'package:guardaya_app/presentation/pages/ventas/ventas_list_page.dart';
 import 'package:guardaya_app/presentation/pages/perfil/perfil_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/crear_empleado_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/empleados_list_page.dart';
+import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/theme_provider.dart';
@@ -19,6 +20,7 @@ import 'package:guardaya_app/presentation/providers/theme_provider.dart';
 /// super_admin tiene acceso a todo.
 const Map<String, List<String>> _routeRoles = {
   '/login': ['super_admin', 'admin', 'empleado'],
+  '/crear-usuarios': ['super_admin', 'admin', 'empleado'],
   '/': ['super_admin', 'admin', 'empleado'],
   '/ventas': ['super_admin', 'admin', 'empleado'],
   '/ventas/registrar': ['super_admin', 'admin', 'empleado'],
@@ -49,8 +51,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isAuthenticated = authState.isAuthenticated;
       final isLoginRoute = state.matchedLocation == '/login';
+      final isCrearUsuariosRoute = state.matchedLocation == '/crear-usuarios';
       final rol = authState.usuario?.rolId;
 
+      // Rutas públicas que no requieren autenticación
+      if (!isAuthenticated && (isLoginRoute || isCrearUsuariosRoute)) {
+        return null;
+      }
       if (!isAuthenticated && !isLoginRoute) {
         return '/login';
       }
@@ -72,6 +79,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/perfil', builder: (context, state) => const PerfilPage()),
       GoRoute(path: '/empleados', builder: (context, state) => const EmpleadosListPage()),
       GoRoute(path: '/empleados/crear', builder: (context, state) => const CrearEmpleadoPage()),
+      // Página temporal para crear usuarios en Supabase Auth
+      // TODO: Eliminar después de crear los usuarios
+      GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),
     ],
   );
 });

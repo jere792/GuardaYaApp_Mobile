@@ -5,6 +5,8 @@ class UsuarioModel {
   final String? empresaId;
   final String username;
   final String nombre;
+  final String? apellidos;
+  final String? telefono;
   final String? email;
   final String rolId;
   final bool activo;
@@ -15,6 +17,8 @@ class UsuarioModel {
     this.empresaId,
     required this.username,
     required this.nombre,
+    this.apellidos,
+    this.telefono,
     this.email,
     required this.rolId,
     required this.activo,
@@ -27,6 +31,8 @@ class UsuarioModel {
       empresaId: json['empresa_id'],
       username: json['username'] ?? '',
       nombre: json['nombre'] ?? '',
+      apellidos: json['apellidos'],
+      telefono: json['telefono'],
       email: json['email'],
       rolId: json['rol_id'] ?? json['rol_nombre'] ?? '',
       activo: json['activo'] ?? true,
@@ -40,6 +46,8 @@ class UsuarioModel {
       'empresa_id': empresaId,
       'username': username,
       'nombre': nombre,
+      'apellidos': apellidos,
+      'telefono': telefono,
       'email': email,
       'rol_id': rolId,
       'activo': activo,
@@ -52,6 +60,8 @@ class UsuarioModel {
     empresaId: empresaId,
     username: username,
     nombre: nombre,
+    apellidos: apellidos,
+    telefono: telefono,
     email: email,
     rolId: rolId,
     activo: activo,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/theme_provider.dart';
@@ -16,10 +17,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _focusNode = FocusNode();
-  int _failedAttempts = 0;
-  DateTime? _cooldownUntil;
   bool _obscurePassword = true;
-  String? _previousError;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -44,23 +44,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
       curve: Curves.easeInOut,
     ));
     _animationController.forward();
-
-    // Limpiar error cuando el usuario escribe
-    _usernameController.addListener(_clearErrorOnType);
-    _passwordController.addListener(_clearErrorOnType);
-  }
-
-  void _clearErrorOnType() {
-    final authState = ref.read(authProvider);
-    if (authState.error != null) {
-      ref.read(authProvider.notifier).clearError();
-    }
   }
 
   @override
   void dispose() {
-    _usernameController.removeListener(_clearErrorOnType);
-    _passwordController.removeListener(_clearErrorOnType);
     _animationController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
@@ -68,46 +55,66 @@ class _LoginPageState extends ConsumerState<LoginPage>
     super.dispose();
   }
 
-  void _handleLogin() {
+  void _clearError() {
+    setState(() => _errorMessage = null);
+    ref.read(authProvider.notifier).clearError();
+  }
+
+  void _handleLogin() async {
+    _clearError();
+    
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      _showError('Ingrese usuario y contraseña');
+      if (mounted) {
+        setState(() => _errorMessage = 'Ingrese usuario y contraseña');
+      }
       return;
     }
+    
+    debugPrint('Login: username=$username, password=${password.length} chars');
 
-    if (_cooldownUntil != null && DateTime.now().isBefore(_cooldownUntil!)) {
-      final seconds = _cooldownUntil!.difference(DateTime.now()).inSeconds;
-      _showError('Demasiados intentos. Espera $seconds segundos.');
-      return;
+    if (mounted) {
+      setState(() => _isLoading = true);
     }
-
     _focusNode.unfocus();
-    ref.read(authProvider.notifier).login(username, password);
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  @override
-  void didUpdateWidget(covariant LoginPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final authState = ref.read(authProvider);
-    if (authState.error != null && !authState.isLoading && authState.error != _previousError) {
-      _previousError = authState.error;
-      _failedAttempts++;
-      if (_failedAttempts >= 3) {
-        _cooldownUntil = DateTime.now().add(const Duration(seconds: 30));
-        _failedAttempts = 0;
+    
+    debugPrint('Login attempt: username=$username, passwordLength=${password.length}');
+    
+    try {
+      // Llamar al login y esperar que complete
+      await ref.read(authProvider.notifier).login(username, password);
+      
+      // Pequeña pausa para que el estado se actualice
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Verificar si hubo error
+      final authState = ref.read(authProvider);
+      debugPrint('Login result: isAuthenticated=${authState.isAuthenticated}, error=${authState.error}');
+      
+      if (!mounted) return;
+      
+      if (authState.error != null) {
+        setState(() {
+          _errorMessage = _getFriendlyError(authState.error);
+          _isLoading = false;
+        });
+      } else if (!authState.isAuthenticated) {
+        setState(() {
+          _errorMessage = 'Usuario o contraseña incorrectos';
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint('Login exception: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error de conexión. Intente nuevamente.';
+          _isLoading = false;
+        });
       }
     }
   }
@@ -124,45 +131,31 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
     final isDarkMode = ref.watch(themeProvider);
     final size = MediaQuery.of(context).size;
     
-    // Usar la altura total de la pantalla, no la disponible (que cambia con el teclado)
     final screenHeight = size.height;
     final isCompact = screenHeight < 680;
     final isTall = screenHeight > 800;
 
-    // Colores del fondo según el tema
     final bgGradient = isDarkMode
-        ? const [
-            Color(0xFF222D20),
-            Color(0xFF1E2832),
-            Color(0xFF16213E),
-          ]
-        : const [
-            Color(0xFFFFFFFF),
-            Color(0xFFFFFFFF),
-            Color(0xFFFFFFFF),
-          ];
+        ? const [Color(0xFF222D20), Color(0xFF1E2832), Color(0xFF16213E)]
+        : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF), Color(0xFFFFFFFF)];
 
     final footerColor = isDarkMode
         ? Colors.white.withOpacity(0.5)
         : const Color(0xFF0F0F0F).withOpacity(0.5);
 
-    // La card es blanca en ambos modos. La diferencia es el fondo exterior.
     final cardColor = const Color(0xFFF8F9FA);
     final cardTextColor = const Color(0xFF0F0F0F);
     final cardTextSecondary = const Color(0xFF0F0F0F).withOpacity(0.6);
     final cardDividerColor = const Color(0xFF0F0F0F).withOpacity(0.1);
-    // Inputs blancos puros en ambos modos. El borde marca el recuadro.
     final fieldBgColor = Colors.white;
     final fieldBorderColor = isDarkMode ? const Color(0xFFE0E0E0) : const Color(0xFFD1D5DB);
     final fieldTextColor = const Color(0xFF0F0F0F);
     final fieldHintColor = const Color(0xFF0F0F0F).withOpacity(0.4);
     final fieldIconColor = const Color(0xFF0F0F0F).withOpacity(0.5);
 
-    // Logo size responsive
     final logoSize = isCompact ? 56.0 : 72.0;
     final logoIconSize = isCompact ? 28.0 : 36.0;
     final titleFontSize = isCompact ? 24.0 : 28.0;
@@ -247,10 +240,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: authState.isLoading ? null : _handleLogin,
+            onTap: _isLoading ? null : _handleLogin,
             borderRadius: BorderRadius.circular(16),
             child: Center(
-              child: authState.isLoading
+              child: _isLoading
                   ? SizedBox(
                       height: 20,
                       width: 20,
@@ -345,11 +338,43 @@ class _LoginPageState extends ConsumerState<LoginPage>
       );
     }
 
+    Widget buildErrorMessage() {
+      if (_errorMessage == null) return const SizedBox.shrink();
+      
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.error.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: AppColors.error.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline,
+                color: AppColors.error, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final content = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(height: topSpacing),
-        // Logo Area
         FadeTransition(
           opacity: _fadeAnimation,
           child: SlideTransition(
@@ -358,7 +383,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
         ),
         SizedBox(height: isCompact ? 6.0 : 12.0),
-        // Login Card
         FadeTransition(
           opacity: _fadeAnimation,
           child: Container(
@@ -379,7 +403,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Título
                 Text(
                   'Bienvenido',
                   textAlign: TextAlign.center,
@@ -398,8 +421,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                     color: cardTextSecondary,
                   ),
                 ),
-
-                // Divider decorativo
                 SizedBox(height: dividerSpacing),
                 Row(
                   children: [
@@ -440,8 +461,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   ],
                 ),
                 SizedBox(height: dividerSpacing),
-
-                // Username Field
                 buildTextField(
                   controller: _usernameController,
                   hint: 'Usuario',
@@ -449,8 +468,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   onSubmitted: () => FocusScope.of(context).nextFocus(),
                 ),
                 SizedBox(height: cardSpacing),
-
-                // Password Field
                 buildTextField(
                   controller: _passwordController,
                   hint: 'Contraseña',
@@ -459,44 +476,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   onSubmitted: _handleLogin,
                 ),
                 SizedBox(height: cardSpacing),
-
-                // Error Message
-                if (authState.error != null) ...[
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: AppColors.error.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline,
-                            color: AppColors.error, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _getFriendlyError(authState.error),
-                            style: TextStyle(
-                              color: AppColors.error,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: cardSpacing),
-                ],
-
-                // Login Button
+                buildErrorMessage(),
+                SizedBox(height: cardSpacing),
                 buildLoginButton(),
-
-                // Divider "o"
                 SizedBox(height: isCompact ? 6.0 : 10.0),
                 Row(
                   children: [
@@ -524,8 +506,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                     ),
                   ],
                 ),
-
-                // Botón de light mode
                 SizedBox(height: isCompact ? 4.0 : 8.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -560,7 +540,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
         ),
         SizedBox(height: bottomSpacing),
-        // Footer
+        // BOTON TEMPORAL - Solo para desarrollo
+        TextButton(
+          onPressed: () {
+            context.push('/crear-usuarios');
+          },
+          child: Text(
+            'Crear Usuarios (Dev)',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white.withOpacity(0.5) : const Color(0xFF0F0F0F).withOpacity(0.5),
+              fontSize: 12,
+            ),
+          ),
+        ),
+        SizedBox(height: 2),
         FadeTransition(
           opacity: _fadeAnimation,
           child: Text(
@@ -575,33 +568,26 @@ class _LoginPageState extends ConsumerState<LoginPage>
       ],
     );
 
-    return Theme(
-      data: Theme.of(context).copyWith(
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: false,
-        ),
-      ),
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: isDarkMode ? const Color(0xFF222D20) : Colors.white,
-        body: Container(
-          width: size.width,
-          height: size.height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: bgGradient,
-            ),
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: isDarkMode ? const Color(0xFF222D20) : Colors.white,
+      body: Container(
+        width: size.width,
+        height: size.height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: bgGradient,
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Center(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: content,
-                ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: content,
               ),
             ),
           ),

@@ -72,11 +72,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         super(const AuthState());
 
   Future<void> login(String username, String password) async {
+    debugPrint('AuthNotifier.login: Starting login for $username');
     state = state.copyWith(isLoading: true, error: null, isOffline: false);
     final result = await _login(LoginParams(username: username, password: password));
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (usuario) => state = state.copyWith(isLoading: false, usuario: usuario, isAuthenticated: true, isOffline: false),
+      (failure) {
+        debugPrint('AuthNotifier.login: Failure - ${failure.message}');
+        state = state.copyWith(isLoading: false, error: failure.message);
+      },
+      (usuario) {
+        debugPrint('AuthNotifier.login: Success - ${usuario.username}');
+        state = state.copyWith(isLoading: false, usuario: usuario, isAuthenticated: true, isOffline: false);
+      },
     );
   }
 

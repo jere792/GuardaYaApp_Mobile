@@ -3,17 +3,18 @@ import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
 
 class AuthDatasource {
-  /// Construye el email a partir del username.
+  /// Construye el email para Supabase Auth.
   /// Si ya tiene formato de email, lo usa directamente.
-  /// Si no, usa username@guardaya.local (formato de migración)
+  /// Si no, usa username@guardaya.com (dominio de la app)
   String _buildEmail(String username) {
     if (username.contains('@')) return username;
-    return '$username@guardaya.local';
+    return '$username@guardaya.com';
   }
 
   Future<AuthResponse> login(String username, String password) async {
     try {
       final email = _buildEmail(username);
+      print('AuthDatasource.login: email=$email');
       final response = await SupabaseService.withTimeout(
         SupabaseService.auth.signInWithPassword(
           email: email,
@@ -21,10 +22,13 @@ class AuthDatasource {
         ),
         operation: 'signInWithPassword',
       );
+      print('AuthDatasource.login: success, session=${response.session != null}');
       return response;
     } on AuthException catch (e) {
+      print('AuthDatasource.login: AuthException: ${e.message}');
       throw AuthException(message: e.message);
     } catch (e) {
+      print('AuthDatasource.login: Exception: $e');
       throw AuthException(message: e.toString());
     }
   }

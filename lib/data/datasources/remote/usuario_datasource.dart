@@ -7,21 +7,27 @@ class UsuarioDatasource {
     required String username,
     required String password,
     required String nombre,
+    String? apellidos,
+    String? telefono,
     String? email,
-    required String empresaId,
+    String? empresaId,
     required String rolNombre,
   }) async {
     try {
+      final params = <String, dynamic>{
+        'p_username': username,
+        'p_password': password,
+        'p_nombre': nombre,
+        'p_rol_nombre': rolNombre,
+      };
+      if (apellidos != null) params['p_apellidos'] = apellidos;
+      if (telefono != null) params['p_telefono'] = telefono;
+      if (email != null) params['p_email'] = email;
+      if (empresaId != null) params['p_empresa_id'] = empresaId;
+
       final data = await SupabaseService.rpc(
-        'crear_usuario_rpc',
-        params: {
-          'p_username': username,
-          'p_password': password,
-          'p_nombre': nombre,
-          'p_email': email,
-          'p_empresa_id': empresaId,
-          'p_rol_nombre': rolNombre,
-        },
+        'crear_usuario_bcrypt',
+        params: params,
       );
       return data as Map<String, dynamic>;
     } on PostgrestException catch (e) {

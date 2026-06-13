@@ -14,6 +14,8 @@ class CrearUsuario implements UseCase<Usuario, CrearUsuarioParams> {
       username: params.username,
       password: params.password,
       nombre: params.nombre,
+      apellidos: params.apellidos,
+      telefono: params.telefono,
       email: params.email,
       empresaId: params.empresaId,
       rolNombre: params.rolNombre,
@@ -25,16 +27,20 @@ class CrearUsuarioParams {
   final String username;
   final String password;
   final String nombre;
+  final String? apellidos;
+  final String? telefono;
   final String? email;
-  final String empresaId;
+  final String? empresaId;
   final String rolNombre;
 
   CrearUsuarioParams({
     required this.username,
     required this.password,
     required this.nombre,
+    this.apellidos,
+    this.telefono,
     this.email,
-    required this.empresaId,
+    this.empresaId,
     required this.rolNombre,
   });
 }

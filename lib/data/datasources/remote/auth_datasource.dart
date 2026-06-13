@@ -1,45 +1,50 @@
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
+import 'package:supabase/supabase.dart' show FunctionException;
 import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
 
 class AuthDatasource {
-  /// Construye el email para Supabase Auth.
-  /// Si ya tiene formato de email, lo usa directamente.
-  /// Si no, usa username@guardaya.com (dominio de la app)
-  String _buildEmail(String username) {
-    if (username.contains('@')) return username;
-    return '$username@guardaya.com';
-  }
-
-  Future<AuthResponse> login(String username, String password) async {
+  /// Login validado contra public.usuarios con bcrypt (via Edge Function)
+  /// No usa Supabase Auth. Devuelve los datos del usuario directamente.
+  Future<Map<String, dynamic>> login(String username, String password) async {
     try {
-      final email = _buildEmail(username);
-      print('AuthDatasource.login: email=$email');
-      final response = await SupabaseService.withTimeout(
-        SupabaseService.auth.signInWithPassword(
-          email: email,
-          password: password,
+      final functionResponse = await SupabaseService.withTimeout(
+        SupabaseService.supabase.functions.invoke(
+          'login-custom',
+          body: {'username': username, 'password': password},
         ),
-        operation: 'signInWithPassword',
+        operation: 'login-custom',
       );
-      print('AuthDatasource.login: success, session=${response.session != null}');
-      return response;
+
+      final data = functionResponse.data as Map<String, dynamic>?;
+      if (data == null || data['success'] != true) {
+        final errorMsg = data?['error'] ?? 'Credenciales inválidas';
+        throw AuthException(message: errorMsg);
+      }
+
+      return data;
     } on AuthException catch (e) {
       print('AuthDatasource.login: AuthException: ${e.message}');
       throw AuthException(message: e.message);
+    } on FunctionException catch (e) {
+      final details = e.details as Map<String, dynamic>?;
+      final errorMsg = details?['error'] ?? 'Usuario o contraseña incorrectos';
+      print('AuthDatasource.login: FunctionException: $errorMsg');
+      throw AuthException(message: errorMsg);
     } catch (e) {
       print('AuthDatasource.login: Exception: $e');
       throw AuthException(message: e.toString());
     }
   }
 
-  /// Obtiene los datos completos del usuario (empresa, colores, rol)
-  /// DESPUÉS de hacer login exitoso con Supabase Auth.
-  Future<Map<String, dynamic>> getUsuarioCompleto() async {
+  /// Obtiene los datos completos del usuario por username (sin depender de auth.uid)
+  Future<Map<String, dynamic>> getUsuarioCompleto(String username) async {
     try {
       final data = await SupabaseService.withTimeout(
-        SupabaseService.supabase.rpc('get_usuario_completo'),
-        operation: 'get_usuario_completo',
+        SupabaseService.supabase.rpc('get_usuario_completo_by_username', params: {
+          'p_username': username,
+        }),
+        operation: 'get_usuario_completo_by_username',
       );
       return data as Map<String, dynamic>;
     } on PostgrestException catch (e) {
@@ -50,12 +55,13 @@ class AuthDatasource {
   }
 
   /// Verifica que el usuario sigue activo en el servidor.
-  /// Si no hay internet, devuelve false (el modo offline maneja eso).
-  Future<bool> verifyUsuarioActivo() async {
+  Future<bool> verifyUsuarioActivo(String username) async {
     try {
       final response = await SupabaseService.withTimeout(
-        SupabaseService.supabase.rpc('verify_usuario_activo'),
-        operation: 'verify_usuario_activo',
+        SupabaseService.supabase.rpc('verify_usuario_activo_by_username', params: {
+          'p_username': username,
+        }),
+        operation: 'verify_usuario_activo_by_username',
       );
       final data = response as Map<String, dynamic>;
       return data['activo'] == true;
@@ -64,29 +70,8 @@ class AuthDatasource {
     }
   }
 
-  /// Renueva el token de sesión usando el refresh token.
-  Future<AuthResponse> refreshSession(String refreshToken) async {
-    try {
-      final response = await SupabaseService.withTimeout(
-        SupabaseService.auth.refreshSession(refreshToken),
-        operation: 'refreshSession',
-      );
-      return response;
-    } catch (e) {
-      throw AuthException(message: 'Error al renovar sesión: $e');
-    }
-  }
-
-  /// Obtiene la sesión actual de Supabase.
-  Future<Session?> getCurrentSession() async {
-    return SupabaseService.auth.currentSession;
-  }
-
   Future<void> logout() async {
-    try {
-      await SupabaseService.auth.signOut();
-    } catch (e) {
-      // Ignorar errores de logout
-    }
+    // No hace nada en el servidor porque no usamos Supabase Auth
+    // El logout se maneja solo en el cliente (SecureStorage.clearAll)
   }
 }

@@ -60,8 +60,10 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
     required String username,
     required String password,
     required String nombre,
+    String? apellidos,
+    String? telefono,
     String? email,
-    required String empresaId,
+    String? empresaId,
     required String rolNombre,
   }) async {
     state = state.copyWith(isLoading: true, error: null, success: false);
@@ -69,6 +71,8 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
       username: username,
       password: password,
       nombre: nombre,
+      apellidos: apellidos,
+      telefono: telefono,
       email: email,
       empresaId: empresaId,
       rolNombre: rolNombre,

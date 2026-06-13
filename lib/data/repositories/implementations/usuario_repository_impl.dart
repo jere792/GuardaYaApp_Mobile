@@ -16,8 +16,10 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
     required String username,
     required String password,
     required String nombre,
+    String? apellidos,
+    String? telefono,
     String? email,
-    required String empresaId,
+    String? empresaId,
     required String rolNombre,
   }) async {
     try {
@@ -25,6 +27,8 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
         username: username,
         password: password,
         nombre: nombre,
+        apellidos: apellidos,
+        telefono: telefono,
         email: email,
         empresaId: empresaId,
         rolNombre: rolNombre,

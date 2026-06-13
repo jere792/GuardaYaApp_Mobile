@@ -20,37 +20,21 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       debugPrint('AuthRepositoryImpl.login: Starting login for $username');
       
-      // 1. Login con Supabase Auth nativo (JWT real)
-      final authResponse = await _datasource.login(username, password);
-      final session = authResponse.session;
+      // 1. Login validado contra public.usuarios con bcrypt (no usa Supabase Auth)
+      final loginData = await _datasource.login(username, password);
+      final userData = loginData['user'] as Map<String, dynamic>?;
 
-      debugPrint('AuthRepositoryImpl.login: Session=${session != null}');
-
-      if (session == null) {
-        return Left(AuthFailure('No se obtuvo sesión'));
+      if (userData == null) {
+        return Left(AuthFailure('No se obtuvo datos de usuario'));
       }
 
-      // 2. Guardar JWT y refresh token
-      await SecureStorage.saveSession(session.accessToken);
-      if (session.refreshToken != null) {
-        await SecureStorage.saveRefreshToken(session.refreshToken!);
-      }
-      if (session.expiresAt != null) {
-        await SecureStorage.saveTokenExpiresAt(
-          DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000),
-        );
-      }
+      debugPrint('AuthRepositoryImpl.login: User validated via bcrypt');
       await SecureStorage.setOfflineMode(false);
 
-      // 3. Obtener datos de usuario, empresa y colores
-      debugPrint('AuthRepositoryImpl.login: Getting user data...');
-      final userData = await _datasource.getUsuarioCompleto();
-      debugPrint('AuthRepositoryImpl.login: User data=$userData');
-      
+      // 2. Guardar usuario en local storage
       final usuario = UsuarioModel.fromJson(userData);
       final empresaData = userData['empresa'] as Map<String, dynamic>?;
 
-      // 4. Guardar en local storage
       await SecureStorage.saveUser(jsonEncode(usuario.toJson()));
       await SecureStorage.saveEmpresaId(usuario.empresaId ?? '');
       if (empresaData != null) {
@@ -106,45 +90,21 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  /// Verifica la sesión con el servidor.
-  /// Si hay internet y el usuario está activo, devuelve true.
-  /// Si no hay internet, mantiene la sesión local (modo offline).
-  /// Si hay internet pero el usuario está inactivo, desloguea.
+  /// Verifica si hay un usuario guardado localmente.
+  /// Si hay internet, verifica que el usuario siga activo en el servidor.
+  /// Si no hay internet, confía en la sesión local (modo offline).
   @override
   Future<Either<Failure, bool>> isAuthenticated() async {
     try {
-      final token = await SecureStorage.getSession();
-      if (token == null) return const Right(false);
+      final userJson = await SecureStorage.getUser();
+      if (userJson == null) return const Right(false);
 
-      final expiresAt = await SecureStorage.getTokenExpiresAt();
-      if (expiresAt != null && expiresAt.isBefore(DateTime.now())) {
-        // Token expirado, intentar renovar
-        final refreshToken = await SecureStorage.getRefreshToken();
-        if (refreshToken != null) {
-          try {
-            final authResponse = await _datasource.refreshSession(refreshToken);
-            final session = authResponse.session;
-            if (session != null) {
-              await SecureStorage.saveSession(session.accessToken);
-              if (session.refreshToken != null) {
-                await SecureStorage.saveRefreshToken(session.refreshToken!);
-              }
-              if (session.expiresAt != null) {
-                await SecureStorage.saveTokenExpiresAt(
-                  DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000),
-                );
-              }
-            }
-          } catch (e) {
-            // Si falla el refresh, desloguear
-            await SecureStorage.clearAll();
-            return const Right(false);
-          }
-        }
-      }
+      final map = jsonDecode(userJson) as Map<String, dynamic>;
+      final username = map['username'] as String?;
+      if (username == null) return const Right(false);
 
       // Verificar con servidor si hay conectividad
-      final isActive = await _datasource.verifyUsuarioActivo();
+      final isActive = await _datasource.verifyUsuarioActivo(username);
       if (isActive) {
         await SecureStorage.setOfflineMode(false);
         return const Right(true);
@@ -159,35 +119,8 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  /// Intenta refrescar la sesión antes de que expire.
+  /// No aplica en el nuevo sistema sin JWT. Mantiene compatibilidad.
   Future<Either<Failure, bool>> refreshSessionIfNeeded() async {
-    try {
-      final expiresAt = await SecureStorage.getTokenExpiresAt();
-      if (expiresAt == null) return const Right(false);
-
-      // Si expira en menos de 5 minutos, renovar
-      if (expiresAt.difference(DateTime.now()).inMinutes < 5) {
-        final refreshToken = await SecureStorage.getRefreshToken();
-        if (refreshToken == null) return const Right(false);
-
-        final authResponse = await _datasource.refreshSession(refreshToken);
-        final session = authResponse.session;
-        if (session != null) {
-          await SecureStorage.saveSession(session.accessToken);
-          if (session.refreshToken != null) {
-            await SecureStorage.saveRefreshToken(session.refreshToken!);
-          }
-          if (session.expiresAt != null) {
-            await SecureStorage.saveTokenExpiresAt(
-              DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000),
-            );
-          }
-          return const Right(true);
-        }
-      }
-      return const Right(true);
-    } catch (e) {
-      return Left(CacheFailure(e.toString()));
-    }
+    return const Right(true);
   }
 }

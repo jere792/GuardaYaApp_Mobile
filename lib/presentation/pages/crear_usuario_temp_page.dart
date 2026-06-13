@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
+import 'package:guardaya_app/presentation/providers/usuarios_provider.dart';
 
 class CrearUsuarioTempPage extends ConsumerStatefulWidget {
   const CrearUsuarioTempPage({super.key});
@@ -51,10 +52,7 @@ class _CrearUsuarioTempPageState extends ConsumerState<CrearUsuarioTempPage> {
       final telefono = _telefonoController.text.trim().isEmpty
           ? null
           : _telefonoController.text.trim();
-      // Email para Supabase Auth (interno, nunca visible al usuario)
-      final emailAuth = '$username@user.local';
-      // Email opcional del usuario (solo para guardar en public.usuarios)
-      final emailUsuario = _emailController.text.trim().isEmpty
+      final email = _emailController.text.trim().isEmpty
           ? null
           : _emailController.text.trim();
 
@@ -76,35 +74,26 @@ class _CrearUsuarioTempPageState extends ConsumerState<CrearUsuarioTempPage> {
         return;
       }
 
-      // Crear usuario en Supabase Auth
-      final userData = {
-        'username': username,
-        'nombre': nombre,
-        'rol_id': _rolId,
-      };
-      // Solo agregar campos opcionales si el usuario los ingresó
-      if (apellidos != null) {
-        userData['apellidos'] = apellidos;
-      }
-      if (telefono != null) {
-        userData['telefono'] = telefono;
-      }
-      if (!isSuperAdmin && _empresaId != null) {
-        userData['empresa_id'] = _empresaId;
-      }
-      if (emailUsuario != null) {
-        userData['email_usuario'] = emailUsuario;
-      }
+      // Buscar nombre del rol para enviar a la función
+      final rolNombre = _roles.firstWhere((r) => r['id'] == _rolId)['nombre']!;
 
-      final response = await SupabaseService.auth.signUp(
-        email: emailAuth,
+      // Llamar al provider que usa crear_usuario_bcrypt (bcrypt en Supabase)
+      final notifier = ref.read(usuariosProvider.notifier);
+      await notifier.crearEmpleado(
+        username: username,
         password: password,
-        data: userData,
+        nombre: nombre,
+        apellidos: apellidos,
+        telefono: telefono,
+        email: email,
+        empresaId: isSuperAdmin ? null : _empresaId,
+        rolNombre: rolNombre,
       );
 
-      if (response.user != null) {
+      final state = ref.read(usuariosProvider);
+      if (state.success) {
         setState(() {
-          _successMessage = 'Usuario $username creado exitosamente!\n\nIMPORTANTE: El usuario fue creado pero el email NO está confirmado. Debes confirmar el email desde el panel de Supabase o usar un Edge Function para confirmarlo automáticamente.';
+          _successMessage = 'Usuario $username creado exitosamente con bcrypt!';
           _isLoading = false;
         });
 
@@ -118,6 +107,11 @@ class _CrearUsuarioTempPageState extends ConsumerState<CrearUsuarioTempPage> {
         setState(() {
           _empresaId = null;
           _rolId = null;
+        });
+      } else if (state.error != null) {
+        setState(() {
+          _errorMessage = state.error;
+          _isLoading = false;
         });
       } else {
         setState(() {
@@ -137,7 +131,7 @@ class _CrearUsuarioTempPageState extends ConsumerState<CrearUsuarioTempPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear Usuario (Temporal)'),
+        title: const Text('Crear Usuario (Dev - BCrypt)'),
         backgroundColor: AppColors.primary,
       ),
       body: Padding(
@@ -147,7 +141,7 @@ class _CrearUsuarioTempPageState extends ConsumerState<CrearUsuarioTempPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Página temporal para crear usuarios en Supabase Auth',
+                'Crea usuarios con bcrypt en public.usuarios (sin trigger)',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey,

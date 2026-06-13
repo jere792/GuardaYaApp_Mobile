@@ -15,6 +15,8 @@ class EmpleadosListPage extends ConsumerStatefulWidget {
 }
 
 class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
+  bool _mostrarInactivos = false;
+
   @override
   void initState() {
     super.initState();
@@ -28,17 +30,27 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
     final empresaId = usuario?.empresaId;
 
     if (rol == 'super_admin') {
-      // super_admin: lista TODOS los usuarios de TODAS las empresas
       ref.read(usuariosProvider.notifier).cargarEmpleados(null, rol);
     } else if (empresaId != null && empresaId.isNotEmpty) {
-      // admin: solo empleados de su empresa
       ref.read(usuariosProvider.notifier).cargarEmpleados(empresaId, rol);
+    }
+  }
+
+  String _rolLabel(String rolId) {
+    switch (rolId.toLowerCase()) {
+      case 'super_admin':
+      case 'superadministrador':
+        return 'Super Admin';
+      case 'admin':
+      case 'administrador':
+        return 'Admin';
+      default:
+        return 'Empleado';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Escuchar cuando authProvider termine de cargar para recargar empleados
     ref.listen(authProvider, (previous, next) {
       if (previous?.isLoading == true && next.isLoading == false && next.usuario != null) {
         _cargarEmpleados();
@@ -46,102 +58,116 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
     });
 
     final usuariosState = ref.watch(usuariosProvider);
-    final empleados = usuariosState.usuarios;
+    final todos = usuariosState.usuarios;
     final empresaColors = ref.watch(empresaColorsSyncProvider);
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
+    final empleados = todos.where((e) => e.activo == !_mostrarInactivos).toList();
+    final activos = todos.where((e) => e.activo).length;
+    final inactivos = todos.length - activos;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Empleados'),
-        backgroundColor: empresaColors.primary,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push('/empleados/crear'),
+      body: Column(
+        children: [
+          _HeaderEmpleados(
+            empresaColors: empresaColors,
+            totalActivos: activos,
+            totalInactivos: inactivos,
+            mostrandoInactivos: _mostrarInactivos,
+            onBack: () => context.pop(),
+            onToggleFilter: rolActual != 'empleado'
+                ? () => setState(() => _mostrarInactivos = !_mostrarInactivos)
+                : null,
+            onAdd: rolActual != 'empleado'
+                ? () => context.push('/empleados/crear')
+                : null,
+          ),
+          Expanded(
+            child: usuariosState.isLoading
+                ? Center(child: CircularProgressIndicator(color: empresaColors.primary))
+                : usuariosState.error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(usuariosState.error!),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _cargarEmpleados,
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : empleados.isEmpty
+                        ? _EmptyState(
+                            icon: _mostrarInactivos ? Icons.delete_sweep : Icons.people_outline,
+                            message: _mostrarInactivos
+                                ? 'No hay empleados inactivos'
+                                : 'No hay empleados activos',
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async => _cargarEmpleados(),
+                            color: empresaColors.primary,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                              child: GridView.builder(
+                                itemCount: empleados.length,
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.82,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final emp = empleados[index];
+                                  return _EmpleadoCard(
+                                    empleado: emp,
+                                    colors: empresaColors,
+                                    rolActual: rolActual,
+                                    rolLabel: _rolLabel(emp.rolId),
+                                    onDesactivar: () => _confirmarDesactivar(context, emp),
+                                    onVerDetalle: () => context.push('/empleados/detalle/${emp.id}'),
+                                    onEditar: () => context.push('/empleados/editar/${emp.id}'),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
           ),
         ],
       ),
-      body: usuariosState.isLoading
-          ? Center(child: CircularProgressIndicator(color: empresaColors.primary))
-          : usuariosState.error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(usuariosState.error!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _cargarEmpleados,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: empresaColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                )
-              : empleados.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.people_outline, size: 64, color: empresaColors.primary.withOpacity(0.3)),
-                          const SizedBox(height: 16),
-                            Text(
-                              'No hay empleados registrados',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                fontSize: 16,
-                              ),
-                            ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () async => _cargarEmpleados(),
-                      color: empresaColors.primary,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: empleados.length,
-                        itemBuilder: (context, index) {
-                          final emp = empleados[index];
-                          return _EmpleadoCard(
-                            empleado: emp,
-                            colors: empresaColors,
-                            rolActual: rolActual,
-                            onDesactivar: () => _confirmarDesactivar(context, emp),
-                          );
-                        },
-                      ),
-                    ),
     );
   }
 
   void _confirmarDesactivar(BuildContext context, Usuario emp) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Desactivar empleado'),
-        content: Text('¿Estás seguro de desactivar a ${emp.nombre}?'),
+      builder: (ctx) => AlertDialog(
+        title: Text(_mostrarInactivos ? 'Reactivar empleado' : 'Desactivar empleado'),
+        content: Text(
+          _mostrarInactivos
+              ? '¿Reactivar a ${emp.nombre}?'
+              : '¿Desactivar a ${emp.nombre}?',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(ctx);
               await ref.read(usuariosProvider.notifier).desactivarEmpleado(emp.id);
               final state = ref.read(usuariosProvider);
               if (state.success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Empleado desactivado exitosamente')),
+                  SnackBar(
+                    content: Text(
+                      _mostrarInactivos
+                          ? 'Empleado reactivado'
+                          : 'Empleado desactivado',
+                    ),
+                  ),
                 );
                 ref.read(usuariosProvider.notifier).resetSuccess();
               } else if (state.error != null && context.mounted) {
@@ -151,8 +177,176 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                 ref.read(usuariosProvider.notifier).resetError();
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Desactivar', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _mostrarInactivos ? Colors.green : Colors.red,
+            ),
+            child: Text(
+              _mostrarInactivos ? 'Reactivar' : 'Desactivar',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderEmpleados extends StatelessWidget {
+  final EmpresaColors empresaColors;
+  final int totalActivos;
+  final int totalInactivos;
+  final bool mostrandoInactivos;
+  final VoidCallback onBack;
+  final VoidCallback? onToggleFilter;
+  final VoidCallback? onAdd;
+
+  const _HeaderEmpleados({
+    required this.empresaColors,
+    required this.totalActivos,
+    required this.totalInactivos,
+    required this.mostrandoInactivos,
+    required this.onBack,
+    this.onToggleFilter,
+    this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(4, 48, 16, 20),
+      decoration: BoxDecoration(
+        color: empresaColors.primary,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: onBack,
+              ),
+              const Spacer(),
+              if (onToggleFilter != null)
+                IconButton(
+                  icon: Icon(
+                    mostrandoInactivos ? Icons.people : Icons.delete_sweep,
+                    color: Colors.white,
+                  ),
+                  onPressed: onToggleFilter,
+                  tooltip: mostrandoInactivos ? 'Ver activos' : 'Ver inactivos',
+                ),
+              if (onAdd != null && !mostrandoInactivos)
+                IconButton(
+                  icon: const Icon(Icons.person_add, color: Colors.white),
+                  onPressed: onAdd,
+                  tooltip: 'Agregar empleado',
+                ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              mostrandoInactivos ? 'Inactivos' : 'Empleados',
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                _StatChip(
+                  icon: Icons.check_circle,
+                  label: '$totalActivos activos',
+                  color: Colors.greenAccent,
+                ),
+                const SizedBox(width: 12),
+                _StatChip(
+                  icon: Icons.cancel,
+                  label: '$totalInactivos inactivos',
+                  color: Colors.redAccent,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String message;
+
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 64, color: colorScheme.onSurface.withValues(alpha: 0.3)),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              fontSize: 16,
+            ),
           ),
         ],
       ),
@@ -164,86 +358,193 @@ class _EmpleadoCard extends StatelessWidget {
   final Usuario empleado;
   final EmpresaColors colors;
   final String rolActual;
+  final String rolLabel;
   final VoidCallback onDesactivar;
+  final VoidCallback onVerDetalle;
+  final VoidCallback onEditar;
 
   const _EmpleadoCard({
     required this.empleado,
     required this.colors,
     required this.rolActual,
+    required this.rolLabel,
     required this.onDesactivar,
+    required this.onVerDetalle,
+    required this.onEditar,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isActive = empleado.activo;
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: empleado.activo ? colors.primary : Colors.grey,
-          foregroundColor: Colors.white,
-          child: Text(
-            (empleado.nombre.isNotEmpty ? empleado.nombre.substring(0, 1) : '?').toUpperCase(),
-          ),
-        ),
-        title: Text(
-          empleado.nombre,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: empleado.activo ? null : colorScheme.onSurface.withOpacity(0.4),
-          ),
-        ),
-        subtitle: Column(
+      elevation: isActive ? 2 : 1,
+      color: isActive ? colorScheme.surface : colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: isActive
+            ? BorderSide.none
+            : BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 2),
-            Text(empleado.username),
-            if (empleado.email != null) ...[
-              const SizedBox(height: 2),
-              Text(empleado.email!, style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
-            ],
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: empleado.activo ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                empleado.activo ? 'Activo' : 'Inactivo',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: empleado.activo ? Colors.green : Colors.red,
+            Center(
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: isActive ? colors.primary : Colors.grey,
+                foregroundColor: Colors.white,
+                child: Text(
+                  (empleado.nombre.isNotEmpty
+                          ? empleado.nombre.substring(0, 1)
+                          : '?')
+                      .toUpperCase(),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            if (rolActual != 'empleado' && empleado.activo)
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'desactivar') onDesactivar();
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'desactivar',
-                    child: Row(
-                      children: [
-                        Icon(Icons.block, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Desactivar'),
-                      ],
+            const SizedBox(height: 6),
+            Text(
+              empleado.nombre,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isActive
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              empleado.username,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive
+                    ? colorScheme.onSurfaceVariant
+                    : colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+            Text(
+              rolLabel,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: colors.primary.withValues(alpha: isActive ? 1.0 : 0.4),
+              ),
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : Colors.red.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isActive ? 'Activo' : 'Inactivo',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: isActive ? Colors.green : Colors.red,
                     ),
                   ),
-                ],
+                ),
+                if (rolActual != 'empleado')
+                  InkWell(
+                    onTap: onDesactivar,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? Colors.red.withValues(alpha: 0.1)
+                            : Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        isActive ? Icons.block : Icons.check_circle_outline,
+                        size: 14,
+                        color: isActive ? Colors.red : Colors.green,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.visibility_outlined,
+                    label: 'Detalle',
+                    onTap: onVerDetalle,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                if (rolActual != 'empleado')
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.edit_outlined,
+                      label: 'Editar',
+                      onTap: onEditar,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: colorScheme.primary),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.primary,
               ),
+            ),
           ],
         ),
       ),

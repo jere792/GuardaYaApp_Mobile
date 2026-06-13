@@ -10,6 +10,8 @@ import 'package:guardaya_app/presentation/pages/ventas/venta_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/ventas/ventas_list_page.dart';
 import 'package:guardaya_app/presentation/pages/perfil/perfil_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/crear_empleado_page.dart';
+import 'package:guardaya_app/presentation/pages/usuarios/empleado_detail_page.dart';
+import 'package:guardaya_app/presentation/pages/usuarios/empleado_edit_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/empleados_list_page.dart';
 import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
@@ -29,6 +31,8 @@ const Map<String, List<String>> _routeRoles = {
   '/perfil': ['super_admin', 'admin', 'empleado'],
   '/empleados': ['super_admin', 'admin'],
   '/empleados/crear': ['super_admin', 'admin'],
+  '/empleados/detalle/:id': ['super_admin', 'admin', 'empleado'],
+  '/empleados/editar/:id': ['super_admin', 'admin'],
 };
 
 bool _isRouteAllowed(String route, String? rol) {
@@ -36,9 +40,14 @@ bool _isRouteAllowed(String route, String? rol) {
   // super_admin siempre puede acceder
   if (rol == 'super_admin') return true;
   // Normalizar rutas con parámetros (ej: /ventas/123 -> /ventas/:id)
-  final normalizedRoute = route.startsWith('/ventas/') && route != '/ventas/registrar' && route != '/ventas/buscar'
-      ? '/ventas/:id'
-      : route;
+  String normalizedRoute = route;
+  if (route.startsWith('/ventas/') && route != '/ventas/registrar' && route != '/ventas/buscar') {
+    normalizedRoute = '/ventas/:id';
+  } else if (route.startsWith('/empleados/detalle/')) {
+    normalizedRoute = '/empleados/detalle/:id';
+  } else if (route.startsWith('/empleados/editar/')) {
+    normalizedRoute = '/empleados/editar/:id';
+  }
   final allowed = _routeRoles[normalizedRoute];
   return allowed != null && allowed.contains(rol);
 }
@@ -79,6 +88,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/perfil', builder: (context, state) => const PerfilPage()),
       GoRoute(path: '/empleados', builder: (context, state) => const EmpleadosListPage()),
       GoRoute(path: '/empleados/crear', builder: (context, state) => const CrearEmpleadoPage()),
+      GoRoute(
+        path: '/empleados/detalle/:id',
+        builder: (context, state) => EmpleadoDetailPage(empleadoId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/empleados/editar/:id',
+        builder: (context, state) => EmpleadoEditPage(empleadoId: state.pathParameters['id']!),
+      ),
       // Página temporal para crear usuarios en Supabase Auth
       // TODO: Eliminar después de crear los usuarios
       GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),

@@ -54,7 +54,7 @@ class UsuarioModel {
       apellidos: json['apellidos']?.toString(),
       telefono: json['telefono']?.toString(),
       email: json['email']?.toString(),
-      rolId: json['rol_id']?.toString() ?? json['rol_nombre']?.toString() ?? '',
+      rolId: json['rol_nombre']?.toString() ?? json['rol_id']?.toString() ?? '',
       activo: parseActivo(json['activo']),
       createdAt: parseCreatedAt(json['created_at']),
     );

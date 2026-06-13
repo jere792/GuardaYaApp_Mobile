@@ -13,7 +13,9 @@ import 'package:guardaya_app/presentation/pages/usuarios/crear_empleado_page.dar
 import 'package:guardaya_app/presentation/pages/usuarios/empleado_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/empleado_edit_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/empleados_list_page.dart';
-import 'package:guardaya_app/presentation/pages/categorias/categorias_page.dart';
+import 'package:guardaya_app/presentation/pages/categorias/categoria_detail_page.dart';
+import 'package:guardaya_app/presentation/pages/categorias/categoria_form_page.dart';
+import 'package:guardaya_app/presentation/pages/categorias/categorias_list_page.dart';
 import 'package:guardaya_app/presentation/pages/clientes/clientes_page.dart';
 import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
@@ -36,6 +38,9 @@ const Map<String, List<String>> _routeRoles = {
   '/empleados/detalle/:id': ['super_admin', 'admin', 'empleado'],
   '/empleados/editar/:id': ['super_admin', 'admin'],
   '/categorias': ['super_admin', 'admin'],
+  '/categorias/crear': ['super_admin', 'admin'],
+  '/categorias/:id': ['super_admin', 'admin', 'empleado'],
+  '/categorias/editar/:id': ['super_admin', 'admin'],
   '/clientes': ['super_admin', 'admin', 'empleado'],
 };
 
@@ -51,6 +56,10 @@ bool _isRouteAllowed(String route, String? rol) {
     normalizedRoute = '/empleados/detalle/:id';
   } else if (route.startsWith('/empleados/editar/')) {
     normalizedRoute = '/empleados/editar/:id';
+  } else if (route.startsWith('/categorias/editar/')) {
+    normalizedRoute = '/categorias/editar/:id';
+  } else if (route.startsWith('/categorias/') && route != '/categorias/crear') {
+    normalizedRoute = '/categorias/:id';
   }
   final allowed = _routeRoles[normalizedRoute];
   return allowed != null && allowed.contains(rol);
@@ -102,7 +111,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // Página temporal para crear usuarios en Supabase Auth
       // TODO: Eliminar después de crear los usuarios
-      GoRoute(path: '/categorias', builder: (context, state) => const CategoriasPage()),
+      GoRoute(path: '/categorias', builder: (context, state) => const CategoriasListPage()),
+      GoRoute(
+        path: '/categorias/crear',
+        builder: (context, state) => const CategoriaFormPage(),
+      ),
+      GoRoute(
+        path: '/categorias/:id',
+        builder: (context, state) => CategoriaDetailPage(categoriaId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/categorias/editar/:id',
+        builder: (context, state) => CategoriaFormPage(categoriaId: state.pathParameters['id']!),
+      ),
       GoRoute(path: '/clientes', builder: (context, state) => const ClientesPage()),
       GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),
     ],

@@ -91,13 +91,100 @@ CREATE TABLE public.productos (
 
 ```sql
 CREATE TABLE public.clientes (
-    id UUID PRIMARY KEY,
-    empresa_id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    empresa_id UUID NOT NULL,
     nombre TEXT NOT NULL,
     telefono TEXT,
     email TEXT,
+    direccion TEXT,
+    notas TEXT,
+    activo BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
+```
+
+### `public.categorias`
+
+```sql
+CREATE TABLE public.categorias (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    empresa_id UUID NOT NULL,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### `public.tipos_transferencia`
+
+```sql
+CREATE TABLE public.tipos_transferencia (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    empresa_id UUID NOT NULL,
+    nombre TEXT NOT NULL,
+    icono TEXT,
+    color TEXT,
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### `public.venta_productos`
+
+```sql
+CREATE TABLE public.venta_productos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    venta_id UUID NOT NULL,
+    empresa_id UUID NOT NULL,
+    producto_id UUID,
+    nombre TEXT NOT NULL,
+    cantidad INTEGER DEFAULT 1,
+    precio_unitario NUMERIC DEFAULT 0.00,
+    subtotal NUMERIC DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### `public.historial_estados`
+
+```sql
+CREATE TABLE public.historial_estados (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    venta_id UUID NOT NULL,
+    empresa_id UUID NOT NULL,
+    estado_anterior TEXT,
+    estado_nuevo TEXT NOT NULL,
+    usuario_id UUID,
+    observacion TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### `public.notificaciones`
+
+```sql
+CREATE TABLE public.notificaciones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    empresa_id UUID NOT NULL,
+    venta_id UUID,
+    usuario_id UUID,
+    tipo TEXT NOT NULL,
+    titulo TEXT NOT NULL,
+    mensaje TEXT,
+    leida BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Tipos Enumerados
+
+```sql
+-- Enum para estado de ventas
+CREATE TYPE public.estado_venta AS ENUM ('pendiente', 'completado', 'cancelado', 'reembolsado');
+
+-- Enum para tipos de notificación
+CREATE TYPE public.tipo_notificacion AS ENUM ('nueva_venta', 'estado_cambiado', 'sync_completado', 'sync_fallido');
 ```
 
 ## Funciones SQL

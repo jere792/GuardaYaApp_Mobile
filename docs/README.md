@@ -8,10 +8,15 @@ El proyecto sigue una arquitectura **Clean Architecture** con **Domain-Driven De
 
 ## Índice
 
-- [Arquitectura](./arquitectura.md) - Arquitectura Clean Architecture y capas del proyecto
+- [Arquitectura](./arquitectura.md) - Clean Architecture y capas del proyecto
 - [Autenticación](./autenticacion.md) - Sistema de login con bcrypt (sin Supabase Auth)
 - [Base de Datos](./database.md) - Estructura de Supabase y esquema SQL
+- [Despliegue](./deployment.md) - Guía paso a paso para deploy
 - [Estructura del Proyecto](./estructura.md) - Organización de carpetas y archivos
+- [Enfoque](./enfoque.md) - Visión y principios del proyecto
+- [Problemática](./problematica.md) - Problemas que resuelve GuardaYa
+- [Roadmap](./roadmap.md) - Estado actual y plan de desarrollo
+- [Versiones](./versiones.md) - Versiones de dependencias y tecnologías
 
 ## Tecnologías Principales
 

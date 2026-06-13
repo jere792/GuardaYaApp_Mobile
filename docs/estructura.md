@@ -121,7 +121,12 @@ GuardaYaApp_Mobile/
 │   ├── arquitectura.md
 │   ├── autenticacion.md
 │   ├── database.md
-│   └── estructura.md
+│   ├── deployment.md
+│   ├── estructura.md
+│   ├── enfoque.md
+│   ├── problematica.md
+│   ├── roadmap.md
+│   └── versiones.md
 ├── supabase_login_bcrypt_clean.sql   # SQL de autenticación
 ├── pubspec.yaml               # Dependencias Flutter
 └── README.md                   # README del proyecto

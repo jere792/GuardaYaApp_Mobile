@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:guardaya_app/data/models/empresa_colors.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
+import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/usuarios_provider.dart';
 
 class CrearEmpleadoPage extends ConsumerStatefulWidget {
@@ -94,6 +96,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
   Widget build(BuildContext context) {
     final usuariosState = ref.watch(usuariosProvider);
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
+    final empresaColors = ref.watch(empresaColorsSyncProvider);
 
     // Solo admin puede crear empleado, super_admin puede crear empleado y admin
     final rolesDisponibles = <String>['empleado'];
@@ -101,7 +104,11 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
     if (rolActual == 'admin') rolesDisponibles.add('admin');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Crear Empleado')),
+      appBar: AppBar(
+        title: const Text('Crear Empleado'),
+        backgroundColor: empresaColors.primary,
+        foregroundColor: Colors.white,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -109,43 +116,58 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
           children: [
             TextField(
               controller: _usernameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Usuario *',
-                prefixIcon: Icon(Icons.person),
+                prefixIcon: const Icon(Icons.person),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: empresaColors.primary),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Contraseña *',
-                prefixIcon: Icon(Icons.lock),
+                prefixIcon: const Icon(Icons.lock),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: empresaColors.primary),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _nombreController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Nombre completo *',
-                prefixIcon: Icon(Icons.badge),
+                prefixIcon: const Icon(Icons.badge),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: empresaColors.primary),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
+                prefixIcon: const Icon(Icons.email),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: empresaColors.primary),
+                ),
               ),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _rolSeleccionado,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Rol',
-                prefixIcon: Icon(Icons.security),
+                prefixIcon: const Icon(Icons.security),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: empresaColors.primary),
+                ),
               ),
               items: rolesDisponibles.map((rol) => DropdownMenuItem(
                 value: rol,
@@ -158,13 +180,19 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: usuariosState.isLoading ? null : _handleSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: empresaColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               child: usuariosState.isLoading
                   ? const SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Crear Empleado'),
+                  : const Text('Crear Empleado', style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

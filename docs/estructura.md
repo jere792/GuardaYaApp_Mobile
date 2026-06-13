@@ -122,6 +122,7 @@ GuardaYaApp_Mobile/
 │   ├── autenticacion.md
 │   ├── database.md
 │   ├── deployment.md
+│   ├── design_system.md
 │   ├── estructura.md
 │   ├── enfoque.md
 │   ├── problematica.md

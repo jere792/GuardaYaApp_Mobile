@@ -12,6 +12,7 @@ El proyecto sigue una arquitectura **Clean Architecture** con **Domain-Driven De
 - [Autenticación](./autenticacion.md) - Sistema de login con bcrypt (sin Supabase Auth)
 - [Base de Datos](./database.md) - Estructura de Supabase y esquema SQL
 - [Despliegue](./deployment.md) - Guía paso a paso para deploy
+- [Diseño UI](./design_system.md) - Sistema de diseño, colores, espaciado, tokens
 - [Estructura del Proyecto](./estructura.md) - Organización de carpetas y archivos
 - [Enfoque](./enfoque.md) - Visión y principios del proyecto
 - [Problemática](./problematica.md) - Problemas que resuelve GuardaYa

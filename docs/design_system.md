@@ -9,7 +9,7 @@ GuardaYa usa un **sistema de diseño dual**:
 | **Branding de Empresa** | `color_primario`, `color_secundario`, `color_acento` | Home, Dashboard, Ventas, Productos (vistas operativas) |
 | **Neutrales de App** | `AppColors.primary` (naranja), grises, blancos | Login, Registro, Configuración, Perfil (vistas de sistema) |
 
-**Regla de oro:** Las vistas de **sistema** (autenticación, configuración, perfil) usan colores neutrales de la app. Las vistas de **negocio** (dashboard, ventas, productos) usan colores de la empresa logueada.
+**Regla de oro:** Solo **Login** (autenticación) usa colores neutrales de la app. **Todo lo demás** (dashboard, ventas, productos, clientes, perfil, configuración) usa colores de branding de la empresa.
 
 ---
 

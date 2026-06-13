@@ -46,7 +46,8 @@ class UsuarioDatasource {
     try {
       log('UsuarioDatasource.listarUsuarios: rol=$rol, empresaId=$empresaId');
 
-      final query = SupabaseService.from('usuarios').select();
+      // ⚠️ query.eq() devuelve un NUEVO builder; hay que capturarlo
+      var query = SupabaseService.from('usuarios').select();
 
       if (rol != 'super_admin') {
         // Admin: solo usuarios de su empresa
@@ -54,7 +55,8 @@ class UsuarioDatasource {
           log('UsuarioDatasource.listarUsuarios: ERROR - empresaId es null/vacio para admin');
           throw ServerException(message: 'El admin no tiene empresa asignada');
         }
-        query.eq('empresa_id', empresaId);
+        query = query.eq('empresa_id', empresaId);
+        log('UsuarioDatasource.listarUsuarios: filtro empresa_id=$empresaId aplicado');
       } else {
         log('UsuarioDatasource.listarUsuarios: super_admin - sin filtro de empresa');
       }

@@ -93,10 +93,13 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                         children: [
                           Icon(Icons.people_outline, size: 64, color: empresaColors.primary.withOpacity(0.3)),
                           const SizedBox(height: 16),
-                          Text(
-                            'No hay empleados registrados',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
-                          ),
+                            Text(
+                              'No hay empleados registrados',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                fontSize: 16,
+                              ),
+                            ),
                         ],
                       ),
                     )
@@ -172,6 +175,8 @@ class _EmpleadoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       elevation: 2,
@@ -189,17 +194,17 @@ class _EmpleadoCard extends StatelessWidget {
           empleado.nombre,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: empleado.activo ? null : Colors.grey,
+            color: empleado.activo ? null : colorScheme.onSurface.withOpacity(0.4),
           ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 2),
-            Text('${empleado.username} | ${empleado.rolId.toUpperCase()}'),
+            Text(empleado.username),
             if (empleado.email != null) ...[
               const SizedBox(height: 2),
-              Text(empleado.email!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              Text(empleado.email!, style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.5))),
             ],
           ],
         ),

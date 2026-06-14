@@ -73,7 +73,13 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
             totalActivos: activos,
             totalInactivos: inactivos,
             mostrandoInactivos: _mostrarInactivos,
-            onBack: () => context.pop(),
+            onBack: () {
+              if (_mostrarInactivos) {
+                setState(() => _mostrarInactivos = false);
+              } else {
+                Navigator.of(context).maybePop();
+              }
+            },
             onToggleFilter: rolActual != 'empleado'
                 ? () => setState(() => _mostrarInactivos = !_mostrarInactivos)
                 : null,

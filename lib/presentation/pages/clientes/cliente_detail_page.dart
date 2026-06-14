@@ -32,7 +32,7 @@ class ClienteDetailPage extends ConsumerWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => context.pop(),
+                    onPressed: () => Navigator.of(context).maybePop(),
                   ),
                 ],
               ),
@@ -64,7 +64,7 @@ class ClienteDetailPage extends ConsumerWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
+                    onPressed: () => Navigator.of(context).maybePop(),
                     ),
                     const Spacer(),
                     IconButton(

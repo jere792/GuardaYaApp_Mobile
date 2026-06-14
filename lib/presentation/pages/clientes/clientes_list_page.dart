@@ -61,7 +61,13 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
+                      onPressed: () {
+                        if (_mostrarInactivos) {
+                          setState(() => _mostrarInactivos = false);
+                        } else {
+                          Navigator.of(context).maybePop();
+                        }
+                      },
                     ),
                     const Spacer(),
                     IconButton(

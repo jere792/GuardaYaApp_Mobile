@@ -34,7 +34,7 @@ class CategoriaDetailPage extends ConsumerWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => context.pop(),
+                    onPressed: () => Navigator.of(context).maybePop(),
                   ),
                 ],
               ),
@@ -66,14 +66,14 @@ class CategoriaDetailPage extends ConsumerWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                  const Spacer(),
+                  if (rolActual != 'empleado')
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                      onPressed: () => context.push('/categorias/editar/${cat.id}'),
                     ),
-                    const Spacer(),
-                    if (rolActual != 'empleado')
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                        onPressed: () => context.push('/categorias/editar/${cat.id}'),
-                      ),
                   ],
                 ),
                 CircleAvatar(

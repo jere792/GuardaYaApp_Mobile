@@ -55,7 +55,7 @@ class EmpleadoDetailPage extends ConsumerWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
+                      onPressed: () => Navigator.of(context).maybePop(),
                     ),
                     const Spacer(),
                     if (rolActual != 'empleado')

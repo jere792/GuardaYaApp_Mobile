@@ -119,7 +119,7 @@ class _CategoriaFormPageState extends ConsumerState<CategoriaFormPage> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+            onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
       body: SingleChildScrollView(

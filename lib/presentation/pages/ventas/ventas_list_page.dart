@@ -64,7 +64,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+            onPressed: () => Navigator.of(context).maybePop(),
         ),
         actions: [
           IconButton(

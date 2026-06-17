@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/domain/entities/cliente.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/clientes_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 
 class ClienteFormPage extends ConsumerStatefulWidget {
   final String? clienteId;
@@ -205,13 +205,12 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
             const SizedBox(height: 32),
             Consumer(builder: (context, ref, _) {
               final state = ref.watch(clientesProvider);
-              final colors = ref.watch(empresaColorsSyncProvider);
               return SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: state.isLoading ? null : _guardar,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.primary,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),

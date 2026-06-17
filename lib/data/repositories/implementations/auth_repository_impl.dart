@@ -5,7 +5,6 @@ import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/core/errors/failures.dart';
 import 'package:guardaya_app/data/datasources/local/cache/secure_storage.dart';
 import 'package:guardaya_app/data/datasources/remote/auth_datasource.dart';
-import 'package:guardaya_app/data/models/empresa_colors.dart';
 import 'package:guardaya_app/data/models/usuario_model.dart';
 import 'package:guardaya_app/domain/entities/usuario.dart';
 import 'package:guardaya_app/domain/repositories/auth_repository.dart';
@@ -33,13 +32,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // 2. Guardar usuario en local storage
       final usuario = UsuarioModel.fromJson(userData);
-      final empresaData = userData['empresa'] as Map<String, dynamic>?;
 
       await SecureStorage.saveUser(jsonEncode(usuario.toJson()));
       await SecureStorage.saveEmpresaId(usuario.empresaId ?? '');
-      if (empresaData != null) {
-        await SecureStorage.saveEmpresaColors(jsonEncode(empresaData));
-      }
 
       debugPrint('AuthRepositoryImpl.login: Success!');
       return Right(usuario.toEntity());
@@ -60,18 +55,6 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(null);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, EmpresaColors>> getEmpresaColors() async {
-    try {
-      final colorsJson = await SecureStorage.getEmpresaColors();
-      if (colorsJson == null) return const Right(EmpresaColors());
-      final map = jsonDecode(colorsJson) as Map<String, dynamic>;
-      return Right(EmpresaColors.fromJson(map));
-    } catch (e) {
-      return const Right(EmpresaColors());
     }
   }
 

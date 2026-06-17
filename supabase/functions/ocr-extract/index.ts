@@ -107,19 +107,32 @@ function extractComprobanteData(text: string) {
   const normalizedText = text.toLowerCase().replace(/\s+/g, " ");
 
   // Regex para codigo de operacion (Yape/Plin)
-  const codigoRegex = /(?:codigo de operacion|n[°o] operacion|operacion|nro\.?)[^\d]*(\d{6,10})/i;
-  const codigoMatch = codigoRegex.exec(text);
+  const codigoRegex = /(?:codigo\s*(?:de\s*)?operacion|n[°º0]\.?\s*(?:de\s*)?operacion|nro\.?\s*(?:de\s*)?operacion|no\.?\s*(?:de\s*)?operacion|numero\s*(?:de\s*)?operacion|operacion\s*(?:n[°º0]\.?|nro\.?|no\.?)?|codigo)[:\s]*(\d{6,10})/i;
+  let codigoMatch = codigoRegex.exec(text);
+
+  // Fallback: buscar cualquier numero de 6-10 digitos
+  if (!codigoMatch) {
+    const fallbackRegex = /\b(\d{6,10})\b/g;
+    let match;
+    while ((match = fallbackRegex.exec(text)) !== null) {
+      const num = match[1];
+      // Descartar si parece año (2024-2030) o parte del monto
+      if (num.length === 4 && parseInt(num) >= 2024 && parseInt(num) <= 2030) continue;
+      codigoMatch = match;
+      break;
+    }
+  }
 
   // Regex para monto (S/ 150.00)
-  const montoRegex = /s\/?\s*\.?\s*(\d+[\.,]?\d{0,2})/i;
+  const montoRegex = /s[\/\s]*\.?\s*(\d+[\.,]?\d{0,2})/i;
   const montoMatch = montoRegex.exec(text);
 
-  // Regex para fecha (dd/mm/yyyy o dd-mm-yyyy)
-  const fechaRegex = /(\d{1,2}[\/-]\d{1,2}[\/-]\d{4})/;
+  // Regex para fecha (dd/mm/yyyy, dd-mm-yyyy, o "10 jun. 2026")
+  const fechaRegex = /(\d{1,2}\s+(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z]*\.?\s*\d{4})|(\d{1,2}[\/-]\d{1,2}[\/-]\d{4})/i;
   const fechaMatch = fechaRegex.exec(text);
 
-  // Regex para hora (HH:MM:SS)
-  const horaRegex = /(\d{1,2}:\d{2}:\d{2})/;
+  // Regex para hora (HH:MM:SS o HH:MM AM/PM)
+  const horaRegex = /(\d{1,2}:\d{2}(?::\d{2})?\s*[ap]\.?\s*m\.?)/i;
   const horaMatch = horaRegex.exec(text);
 
   // Regex para nombre destinatario
@@ -132,11 +145,14 @@ function extractComprobanteData(text: string) {
     monto = parseFloat(raw);
   }
 
+  const fecha = fechaMatch ? (fechaMatch[1] || fechaMatch[2]).trim() : null;
+  const hora = horaMatch ? horaMatch[1].trim().replace(/\s+/g, ' ') : null;
+
   return {
     codigo: codigoMatch ? codigoMatch[1].trim() : null,
     monto: monto,
-    fecha: fechaMatch ? fechaMatch[1].trim() : null,
-    hora: horaMatch ? horaMatch[1].trim() : null,
+    fecha: fecha,
+    hora: hora,
     nombreDestinatario: nombreMatch ? nombreMatch[1].trim() : null,
   };
 }

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:guardaya_app/data/models/empresa_colors.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/usuarios_provider.dart';
 
 class CrearEmpleadoPage extends ConsumerStatefulWidget {
@@ -182,11 +181,10 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
             const SizedBox(height: 32),
             Consumer(builder: (context, ref, _) {
               final state = ref.watch(usuariosProvider);
-              final colors = ref.watch(empresaColorsSyncProvider);
               return ElevatedButton(
                 onPressed: state.isLoading ? null : _handleSubmit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.primary,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

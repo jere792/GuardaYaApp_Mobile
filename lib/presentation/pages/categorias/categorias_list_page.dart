@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/domain/entities/categoria.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/categorias_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 
 class CategoriasListPage extends ConsumerStatefulWidget {
   const CategoriasListPage({super.key});
@@ -31,7 +31,6 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(categoriasProvider);
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     final activas = state.categorias.where((c) => c.activo).length;
@@ -43,7 +42,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(4, 48, 16, 20),
             decoration: BoxDecoration(
-              color: empresaColors.primary,
+              color: AppColors.primary,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),

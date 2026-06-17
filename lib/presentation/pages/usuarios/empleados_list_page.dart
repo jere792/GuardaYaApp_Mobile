@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:guardaya_app/data/models/empresa_colors.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/domain/entities/usuario.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/usuarios_provider.dart';
 
 class EmpleadosListPage extends ConsumerStatefulWidget {
@@ -59,7 +58,6 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
 
     final usuariosState = ref.watch(usuariosProvider);
     final todos = usuariosState.usuarios;
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
     final empleados = todos.where((e) => e.activo == !_mostrarInactivos).toList();
     final activos = todos.where((e) => e.activo).length;
@@ -69,7 +67,6 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
       body: Column(
         children: [
           _HeaderEmpleados(
-            empresaColors: empresaColors,
             totalActivos: activos,
             totalInactivos: inactivos,
             mostrandoInactivos: _mostrarInactivos,
@@ -89,7 +86,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
           ),
           Expanded(
             child: usuariosState.isLoading
-                ? Center(child: CircularProgressIndicator(color: empresaColors.primary))
+                ? Center(child: CircularProgressIndicator(color: AppColors.primary))
                 : usuariosState.error != null
                     ? Center(
                         child: Column(
@@ -113,7 +110,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                           )
                         : RefreshIndicator(
                             onRefresh: () async => _cargarEmpleados(),
-                            color: empresaColors.primary,
+                            color: AppColors.primary,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                               child: GridView.builder(
@@ -128,7 +125,6 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                                   final emp = empleados[index];
                                   return _EmpleadoCard(
                                     empleado: emp,
-                                    colors: empresaColors,
                                     rolActual: rolActual,
                                     rolLabel: _rolLabel(emp.rolId),
                                     onDesactivar: () => _confirmarDesactivar(context, emp),
@@ -198,7 +194,6 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
 }
 
 class _HeaderEmpleados extends StatelessWidget {
-  final EmpresaColors empresaColors;
   final int totalActivos;
   final int totalInactivos;
   final bool mostrandoInactivos;
@@ -207,7 +202,6 @@ class _HeaderEmpleados extends StatelessWidget {
   final VoidCallback? onAdd;
 
   const _HeaderEmpleados({
-    required this.empresaColors,
     required this.totalActivos,
     required this.totalInactivos,
     required this.mostrandoInactivos,
@@ -222,7 +216,7 @@ class _HeaderEmpleados extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(4, 48, 16, 20),
       decoration: BoxDecoration(
-        color: empresaColors.primary,
+        color: AppColors.primary,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -362,7 +356,6 @@ class _EmptyState extends StatelessWidget {
 
 class _EmpleadoCard extends StatelessWidget {
   final Usuario empleado;
-  final EmpresaColors colors;
   final String rolActual;
   final String rolLabel;
   final VoidCallback onDesactivar;
@@ -371,7 +364,6 @@ class _EmpleadoCard extends StatelessWidget {
 
   const _EmpleadoCard({
     required this.empleado,
-    required this.colors,
     required this.rolActual,
     required this.rolLabel,
     required this.onDesactivar,
@@ -401,7 +393,7 @@ class _EmpleadoCard extends StatelessWidget {
             Center(
               child: CircleAvatar(
                 radius: 22,
-                backgroundColor: isActive ? colors.primary : Colors.grey,
+                backgroundColor: isActive ? AppColors.primary : Colors.grey,
                 foregroundColor: Colors.white,
                 child: Text(
                   (empleado.nombre.isNotEmpty
@@ -442,7 +434,7 @@ class _EmpleadoCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: colors.primary.withValues(alpha: isActive ? 1.0 : 0.4),
+                color: AppColors.primary.withValues(alpha: isActive ? 1.0 : 0.4),
               ),
             ),
             const Spacer(),

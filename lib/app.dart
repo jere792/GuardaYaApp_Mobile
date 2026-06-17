@@ -21,7 +21,6 @@ import 'package:guardaya_app/presentation/pages/clientes/cliente_form_page.dart'
 import 'package:guardaya_app/presentation/pages/clientes/clientes_list_page.dart';
 import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/theme_provider.dart';
 
 /// Define qué roles pueden acceder a cada ruta.
@@ -157,14 +156,13 @@ class GuardaYaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     final isDarkMode = ref.watch(themeProvider);
 
     return MaterialApp.router(
       title: 'GuardaYa',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme(empresaColors: empresaColors),
-      darkTheme: AppTheme.darkTheme(empresaColors: empresaColors),
+      theme: AppTheme.lightTheme(),
+      darkTheme: AppTheme.darkTheme(),
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       routerConfig: router,
     );

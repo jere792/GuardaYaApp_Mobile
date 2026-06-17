@@ -40,9 +40,6 @@ CREATE TABLE public.usuarios (
 CREATE TABLE public.empresas (
     id UUID PRIMARY KEY,
     nombre TEXT NOT NULL,
-    color_primario TEXT,
-    color_secundario TEXT,
-    color_acento TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 ```

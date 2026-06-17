@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/presentation/providers/usuarios_provider.dart';
 
 class EmpleadoDetailPage extends ConsumerWidget {
@@ -25,7 +25,6 @@ class EmpleadoDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usuariosState = ref.watch(usuariosProvider);
     final empleado = usuariosState.usuarios.where((u) => u.id == empleadoId).firstOrNull;
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
     if (empleado == null) {
       return Scaffold(
@@ -43,7 +42,7 @@ class EmpleadoDetailPage extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
             decoration: BoxDecoration(
-              color: empresaColors.primary,
+              color: AppColors.primary,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),

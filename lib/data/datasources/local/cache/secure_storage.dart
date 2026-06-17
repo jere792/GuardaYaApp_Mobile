@@ -42,18 +42,6 @@ class SecureStorage {
     await _storage.delete(key: AppConstants.userKey);
   }
 
-  static Future<void> saveEmpresaColors(String colorsJson) async {
-    await _storage.write(key: AppConstants.empresaColorsKey, value: colorsJson);
-  }
-
-  static Future<String?> getEmpresaColors() async {
-    return await _storage.read(key: AppConstants.empresaColorsKey);
-  }
-
-  static Future<void> deleteEmpresaColors() async {
-    await _storage.delete(key: AppConstants.empresaColorsKey);
-  }
-
   static Future<void> saveRefreshToken(String refreshToken) async {
     await _storage.write(key: 'refresh_token', value: refreshToken);
   }

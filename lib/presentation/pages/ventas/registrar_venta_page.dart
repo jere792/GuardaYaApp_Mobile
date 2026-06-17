@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/core/utils/image_picker.dart';
 import 'package:guardaya_app/data/models/pending_venta_model.dart';
+import 'package:guardaya_app/data/datasources/remote/ventas_datasource.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
-import 'package:guardaya_app/presentation/providers/connectivity_provider.dart';
+import 'package:guardaya_app/presentation/widgets/common/confirmation_dialog.dart';
+import 'package:guardaya_app/presentation/widgets/common/loading_overlay.dart';
+import 'package:guardaya_app/presentation/widgets/common/top_right_toast.dart';
 import 'package:guardaya_app/services/ocr_service.dart';
 import 'package:guardaya_app/data/datasources/local/db/pending_ventas_dao.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
@@ -17,7 +19,7 @@ class ProductoVenta {
   int cantidad;
   double precio;
   double get subtotal => cantidad * precio;
-  
+
   ProductoVenta({
     required this.nombre,
     this.cantidad = 1,
@@ -33,16 +35,13 @@ class RegistrarVentaPage extends ConsumerStatefulWidget {
 }
 
 class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
-  // Step tracking
   int _currentStep = 0;
-  
-  // Image & OCR
+
   File? _comprobanteImage;
   bool _isScanning = false;
   Map<String, dynamic>? _ocrResult;
   double _ocrConfidence = 0;
-  
-  // Form controllers
+
   final _codigoController = TextEditingController();
   final _montoController = TextEditingController();
   final _fechaController = TextEditingController();
@@ -50,32 +49,28 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   final _clienteNombreController = TextEditingController();
   final _clienteTelefonoController = TextEditingController();
   final _descripcionController = TextEditingController();
-  
-  // Transfer type
+
   String _tipoTransferencia = 'Yape';
   final List<String> _tiposTransferencia = ['Yape', 'Plin', 'Transferencia', 'Efectivo', 'Otro'];
-  
-  // Products
+
   final List<ProductoVenta> _productos = [];
   final _productoNombreController = TextEditingController();
   final _productoPrecioController = TextEditingController();
-  
-  // State
-  bool _isSaving = false;
+
   bool _isOffline = false;
-  
+
   @override
   void initState() {
     super.initState();
     _checkConnectivity();
   }
-  
+
   Future<void> _checkConnectivity() async {
     final connectivityService = ConnectivityService();
     final online = await connectivityService.isOnline;
     setState(() => _isOffline = !online);
   }
-  
+
   @override
   void dispose() {
     _codigoController.dispose();
@@ -89,7 +84,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     _productoPrecioController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _takePhoto() async {
     final image = await ImagePickerHelper.pickImageFromCamera();
     if (image != null) {
@@ -100,7 +95,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       });
     }
   }
-  
+
   Future<void> _pickFromGallery() async {
     final image = await ImagePickerHelper.pickImageFromGallery();
     if (image != null) {
@@ -111,20 +106,19 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       });
     }
   }
-  
+
   Future<void> _scanWithOcr() async {
     if (_comprobanteImage == null) return;
-    
+
     setState(() => _isScanning = true);
-    
+
     try {
       final result = await OcrService.extractFromImage(_comprobanteImage!);
-      
+
       setState(() {
         _ocrResult = result;
         _ocrConfidence = result['confianza'] ?? 0;
-        
-        // Auto-fill fields
+
         if (result['codigo'] != null) {
           _codigoController.text = result['codigo']!;
         }
@@ -138,91 +132,71 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
           _horaController.text = result['hora']!;
         }
       });
-      
-      _showSuccess('OCR completado. Datos extraídos con ${(result['confianza'] * 100).toStringAsFixed(0)}% de confianza.');
+
+      TopRightToast.show(
+        context,
+        'OCR completado. Datos extraídos con ${(result['confianza'] * 100).toStringAsFixed(0)}% de confianza.',
+      );
     } catch (e) {
-      _showError('Error al escanear: ${e.toString()}');
+      TopRightToast.show(context, 'Error al escanear: ${e.toString()}', isError: true);
     } finally {
       setState(() => _isScanning = false);
     }
   }
-  
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-  
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-  
+
   double get _totalVenta {
     if (_productos.isEmpty) {
       return double.tryParse(_montoController.text.replaceAll(',', '.')) ?? 0;
     }
     return _productos.fold(0, (sum, p) => sum + p.subtotal);
   }
-  
+
   void _addProducto() {
     final nombre = _productoNombreController.text.trim();
     final precio = double.tryParse(_productoPrecioController.text.replaceAll(',', '.')) ?? 0;
-    
+
     if (nombre.isEmpty || precio <= 0) {
-      _showError('Ingrese nombre y precio válidos');
+      TopRightToast.show(context, 'Ingrese nombre y precio válidos', isError: true);
       return;
     }
-    
+
     setState(() {
       _productos.add(ProductoVenta(nombre: nombre, precio: precio));
       _productoNombreController.clear();
       _productoPrecioController.clear();
     });
   }
-  
+
   void _removeProducto(int index) {
     setState(() => _productos.removeAt(index));
   }
-  
+
   Future<void> _guardarVenta() async {
     final authState = ref.read(authProvider);
     final usuario = authState.usuario;
-    
+
     if (usuario == null) {
-      _showError('Error: No hay usuario autenticado');
+      TopRightToast.show(context, 'Error: No hay usuario autenticado', isError: true);
       return;
     }
-    
+
     if (_codigoController.text.trim().isEmpty || _montoController.text.trim().isEmpty) {
-      _showError('Ingrese código y monto de la venta');
+      TopRightToast.show(context, 'Ingrese código y monto de la venta', isError: true);
       return;
     }
-    
+
     final monto = double.tryParse(_montoController.text.replaceAll(',', '.')) ?? 0;
     if (monto <= 0) {
-      _showError('El monto debe ser mayor a 0');
+      TopRightToast.show(context, 'El monto debe ser mayor a 0', isError: true);
       return;
     }
-    
-    setState(() => _isSaving = true);
-    
+
+    LoadingOverlay.show(context, message: 'Guardando venta...');
+
     try {
       final uuid = const Uuid();
       final ventaId = uuid.v4();
-      
-      // Crear venta para SQLite
+
       final pendingVenta = PendingVentaModel(
         id: ventaId,
         empresaId: usuario.empresaId ?? '',
@@ -237,33 +211,89 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         imagenYapeLocalPath: _comprobanteImage?.path,
         createdAt: DateTime.now().toIso8601String(),
       );
-      
-      // Guardar en SQLite
+
+      // Guardar siempre en SQLite local
       final dao = PendingVentasDao();
       await dao.insertPendingVenta(pendingVenta);
-      
-      // Si hay internet, intentar sync inmediato
+
+      // Intentar sync inmediato a Supabase si hay internet
+      bool synced = false;
       if (!_isOffline) {
-        // TODO: Implementar sync inmediato
-        _showSuccess('Venta guardada y sincronizada con Supabase');
-      } else {
-        _showSuccess('Venta guardada localmente. Se sincronizará cuando haya internet.');
+        try {
+          final ventaMap = pendingVenta.toMap();
+          ventaMap.remove('sync_status');
+          ventaMap.remove('sync_error');
+          ventaMap.remove('retry_count');
+          ventaMap.remove('imagen_yape_local_path');
+          ventaMap.remove('imagen_entrega_local_path');
+          ventaMap.remove('cliente_id');
+
+          // Convertir fecha_yape a ISO 8601 para Supabase
+          if (ventaMap['fecha_yape'] != null) {
+            final parsed = _parseFechaToIso(ventaMap['fecha_yape'] as String);
+            ventaMap['fecha_yape'] = parsed;
+          }
+
+          final datasource = VentasDatasource();
+          await datasource.registrarVenta(ventaMap);
+
+          await dao.updateSyncStatus(ventaId, 'synced');
+          synced = true;
+        } catch (syncError) {
+          debugPrint('Sync inmediato falló: $syncError');
+        }
       }
-      
-      // Limpiar formulario
+
+      if (mounted) LoadingOverlay.hide(context);
+
+      if (synced) {
+        TopRightToast.show(context, 'Venta guardada y sincronizada con Supabase');
+      } else if (_isOffline) {
+        TopRightToast.show(context, 'Venta guardada localmente. Se sincronizará cuando haya internet.');
+      } else {
+        TopRightToast.show(context, 'Venta guardada localmente. El sync automático continuará en segundo plano.', isError: true);
+      }
+
       _clearForm();
-      
-      // Volver a la lista de ventas
+
       if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 800));
         Navigator.of(context).pop();
       }
     } catch (e) {
-      _showError('Error al guardar: ${e.toString()}');
-    } finally {
-      setState(() => _isSaving = false);
+      if (mounted) LoadingOverlay.hide(context);
+      TopRightToast.show(context, 'Error al guardar: ${e.toString()}', isError: true);
     }
   }
-  
+
+  String? _parseFechaToIso(String fecha) {
+    try {
+      // Formato dd/mm/aaaa
+      final parts = fecha.split(RegExp(r'[/-]'));
+      if (parts.length == 3 && parts[0].length <= 2) {
+        final dia = parts[0].padLeft(2, '0');
+        final mes = parts[1].padLeft(2, '0');
+        final anio = parts[2].length == 2 ? '20${parts[2]}' : parts[2];
+        return '$anio-$mes-${dia}T00:00:00.000Z';
+      }
+
+      // Formato "10 jun. 2026"
+      final meses = {
+        'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04',
+        'may': '05', 'jun': '06', 'jul': '07', 'ago': '08',
+        'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12',
+      };
+      final textMatch = RegExp(r'(\d{1,2})\s+([a-z]{3})[a-z]*\.?\s+(\d{4})', caseSensitive: false).firstMatch(fecha);
+      if (textMatch != null) {
+        final dia = textMatch.group(1)!.padLeft(2, '0');
+        final mes = meses[textMatch.group(2)!.toLowerCase()] ?? '01';
+        final anio = textMatch.group(3)!;
+        return '$anio-$mes-${dia}T00:00:00.000Z';
+      }
+    } catch (_) {}
+    return fecha;
+  }
+
   void _clearForm() {
     setState(() {
       _comprobanteImage = null;
@@ -280,7 +310,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       _productos.clear();
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -300,38 +330,21 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Progress indicator
-            _buildStepper(),
-            const SizedBox(height: 24),
-            
-            // Step 1: Tipo de transferencia
-            _buildStep1(),
-            
-            // Step 2: Foto del comprobante
-            if (_currentStep >= 1) _buildStep2(),
-            
-            // Step 3: Datos extraídos
-            if (_currentStep >= 2) _buildStep3(),
-            
-            // Step 4: Datos del cliente
-            if (_currentStep >= 3) _buildStep4(),
-            
-            // Step 5: Productos
-            if (_currentStep >= 4) _buildStep5(),
-            
-            // Step 6: Resumen y guardar
-            if (_currentStep >= 5) _buildStep6(),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildStepper(),
+          const SizedBox(height: 8),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: _buildCurrentStep(),
+            ),
+          ),
+        ],
       ),
     );
   }
-  
+
   Widget _buildStepper() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -341,28 +354,26 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
           _buildStepLine(0),
           _buildStepCircle(1, Icons.camera_alt, 'Foto'),
           _buildStepLine(1),
-          _buildStepCircle(2, Icons.text_fields, 'Datos'),
+          _buildStepCircle(2, Icons.person, 'Cliente'),
           _buildStepLine(2),
-          _buildStepCircle(3, Icons.person, 'Cliente'),
+          _buildStepCircle(3, Icons.shopping_cart, 'Producto'),
           _buildStepLine(3),
-          _buildStepCircle(4, Icons.shopping_cart, 'Items'),
-          _buildStepLine(4),
-          _buildStepCircle(5, Icons.check, 'Guardar'),
+          _buildStepCircle(4, Icons.check, 'Guardar'),
         ],
       ),
     );
   }
-  
+
   Widget _buildStepCircle(int step, IconData icon, String label) {
     final isActive = step <= _currentStep;
     final isCurrent = step == _currentStep;
-    
+
     return Expanded(
       child: Column(
         children: [
           GestureDetector(
             onTap: () {
-              if (step <= _currentStep + 1) {
+              if (step <= _currentStep) {
                 setState(() => _currentStep = step);
               }
             },
@@ -405,7 +416,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       ),
     );
   }
-  
+
   Widget _buildStepLine(int step) {
     final isActive = step < _currentStep;
     return Container(
@@ -415,44 +426,139 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       margin: const EdgeInsets.only(bottom: 20),
     );
   }
-  
+
+  Widget _buildCurrentStep() {
+    switch (_currentStep) {
+      case 0: return _buildStep1();
+      case 1: return _buildStep2();
+      case 2: return _buildStep3();
+      case 3: return _buildStep4();
+      case 4: return _buildStep5();
+      default: return _buildStep1();
+    }
+  }
+
+  Widget _navRow({bool showBack = false, bool showOmit = false, required String nextText, required VoidCallback onNext, VoidCallback? onOmit}) {
+    return Row(
+      children: [
+        if (showBack)
+          Expanded(
+            child: SizedBox(
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () => setState(() => _currentStep--),
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Anterior'),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: const BorderSide(color: AppColors.primary),
+                  foregroundColor: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+        if (showBack && (showOmit || onOmit != null)) const SizedBox(width: 12),
+        if (showOmit || onOmit != null)
+          Expanded(
+            child: SizedBox(
+              height: 48,
+              child: OutlinedButton(
+                onPressed: onOmit ?? () => setState(() => _currentStep++),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: BorderSide(color: Colors.grey.shade400),
+                  foregroundColor: Colors.grey.shade700,
+                ),
+                child: const Text('Omitir', style: TextStyle(fontSize: 15)),
+              ),
+            ),
+          ),
+        if ((showBack || showOmit || onOmit != null)) const SizedBox(width: 12),
+        Expanded(
+          flex: (showBack || showOmit || onOmit != null) ? 1 : 2,
+          child: SizedBox(
+            height: 48,
+            child: ElevatedButton(
+              onPressed: onNext,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: Text(nextText, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Step 1: Tipo de transferencia
   Widget _buildStep1() {
     return _buildCard(
       title: 'Tipo de Transferencia',
       icon: Icons.payment,
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: _tiposTransferencia.map((tipo) {
-          final isSelected = _tipoTransferencia == tipo;
-          return ChoiceChip(
-            label: Text(tipo),
-            selected: isSelected,
-            onSelected: (selected) {
-              if (selected) {
-                setState(() {
-                  _tipoTransferencia = tipo;
-                  if (_currentStep < 1) _currentStep = 1;
-                });
-              }
-            },
-            selectedColor: AppColors.primary,
-            labelStyle: TextStyle(
-              color: isSelected ? Colors.white : AppColors.textPrimary,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _tiposTransferencia.map((tipo) {
+              final isSelected = _tipoTransferencia == tipo;
+              return ChoiceChip(
+                label: Text(tipo),
+                selected: isSelected,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() => _tipoTransferencia = tipo);
+                  }
+                },
+                selectedColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                backgroundColor: Colors.grey.shade100,
+              );
+            }).toList(),
+          ),
+          if (_tipoTransferencia == 'Efectivo') ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.warning, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Para efectivo solo necesitas ingresar el monto manualmente.',
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            backgroundColor: Colors.grey.shade100,
-          );
-        }).toList(),
+          ],
+          const SizedBox(height: 16),
+          _navRow(nextText: 'Continuar', onNext: () => setState(() => _currentStep = 1)),
+        ],
       ),
     );
   }
-  
+
+  // Step 2: Foto y datos extraídos
   Widget _buildStep2() {
     return _buildCard(
-      title: 'Foto del Comprobante',
+      title: 'Foto y Datos Extraídos',
       icon: Icons.camera_alt,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_comprobanteImage == null) ...[
             Container(
@@ -465,18 +571,11 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.camera_alt_outlined,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
+                  Icon(Icons.camera_alt_outlined, size: 64, color: Colors.grey.shade400),
                   const SizedBox(height: 12),
                   Text(
                     'Toma una foto del comprobante',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -511,40 +610,53 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               borderRadius: BorderRadius.circular(16),
               child: Image.file(
                 _comprobanteImage!,
-                height: 280,
+                height: 220,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton.icon(
-                  onPressed: _isScanning ? null : _scanWithOcr,
-                  icon: _isScanning
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.document_scanner),
-                  label: Text(_isScanning ? 'Escaneando...' : 'Escanear con OCR'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: _isScanning ? null : _scanWithOcr,
+                      icon: _isScanning
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.document_scanner, size: 18),
+                      label: Text(_isScanning ? 'Escaneando...' : 'Escanear con OCR'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _comprobanteImage = null;
-                      _ocrResult = null;
-                    });
-                  },
-                  icon: const Icon(Icons.delete, color: AppColors.error),
-                  tooltip: 'Eliminar foto',
+                SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _comprobanteImage = null;
+                        _ocrResult = null;
+                        _ocrConfidence = 0;
+                      });
+                    },
+                    icon: const Icon(Icons.delete, size: 18, color: AppColors.error),
+                    label: const Text('Quitar', style: TextStyle(color: AppColors.error)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.error),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -553,32 +665,24 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _ocrConfidence >= 0.7
-                      ? Colors.green.shade50
-                      : Colors.orange.shade50,
+                  color: _ocrConfidence >= 0.7 ? Colors.green.shade50 : Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: _ocrConfidence >= 0.7
-                        ? Colors.green.shade300
-                        : Colors.orange.shade300,
+                    color: _ocrConfidence >= 0.7 ? Colors.green.shade300 : Colors.orange.shade300,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       _ocrConfidence >= 0.7 ? Icons.check_circle : Icons.warning,
-                      color: _ocrConfidence >= 0.7
-                          ? Colors.green.shade700
-                          : Colors.orange.shade700,
+                      color: _ocrConfidence >= 0.7 ? Colors.green.shade700 : Colors.orange.shade700,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'OCR: ${(_ocrConfidence * 100).toStringAsFixed(0)}% de confianza',
                         style: TextStyle(
-                          color: _ocrConfidence >= 0.7
-                              ? Colors.green.shade700
-                              : Colors.orange.shade700,
+                          color: _ocrConfidence >= 0.7 ? Colors.green.shade700 : Colors.orange.shade700,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -588,26 +692,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               ),
             ],
           ],
-          if (_currentStep < 2) ...[
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _comprobanteImage != null || _tipoTransferencia == 'Efectivo'
-                  ? () => setState(() => _currentStep = 2)
-                  : null,
-              child: const Text('Continuar'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildStep3() {
-    return _buildCard(
-      title: 'Datos Extraídos',
-      icon: Icons.text_fields,
-      child: Column(
-        children: [
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
           _buildTextField(
             controller: _codigoController,
             label: 'Código de operación',
@@ -641,22 +728,41 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () => setState(() => _currentStep = 3),
-            child: const Text('Continuar'),
-          ),
+          const SizedBox(height: 16),
+          _navRow(showBack: true, nextText: 'Continuar', onNext: () => setState(() => _currentStep = 2)),
         ],
       ),
     );
   }
-  
-  Widget _buildStep4() {
+
+  // Step 3: Datos de cliente (opcional)
+  Widget _buildStep3() {
     return _buildCard(
       title: 'Datos del Cliente',
       icon: Icons.person,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: AppColors.primary, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Campo opcional. Puedes saltar este paso si no tienes los datos del cliente.',
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           _buildTextField(
             controller: _clienteNombreController,
             label: 'Nombre del cliente',
@@ -676,23 +782,46 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             icon: Icons.notes,
             maxLines: 2,
           ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () => setState(() => _currentStep = 4),
-            child: const Text('Continuar'),
+          const SizedBox(height: 16),
+          _navRow(
+            showBack: true,
+            showOmit: true,
+            nextText: 'Continuar',
+            onNext: () => setState(() => _currentStep = 3),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildStep5() {
+
+  // Step 4: Producto (opcional)
+  Widget _buildStep4() {
     return _buildCard(
       title: 'Productos',
       icon: Icons.shopping_cart,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Add product form
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: AppColors.primary, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Campo opcional. Puedes saltar este paso si no tienes productos que detallar.',
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -720,21 +849,17 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             ],
           ),
           const SizedBox(height: 16),
-          
-          // Products list
           if (_productos.isEmpty) ...[
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Text(
-                'No hay productos. Puedes agregar items o usar solo el monto total.',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
+                'No hay productos agregados. Puedes añadir items o usar solo el monto total.',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -756,30 +881,17 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            producto.nombre,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
+                          Text(producto.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                           Text(
                             '${producto.cantidad} x S/ ${producto.precio.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                           ),
                         ],
                       ),
                     ),
                     Text(
                       'S/ ${producto.subtotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppColors.primary,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
                     ),
                     IconButton(
                       onPressed: () => _removeProducto(index),
@@ -788,46 +900,51 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
-          
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () => setState(() => _currentStep = 5),
-            child: const Text('Continuar'),
+          const SizedBox(height: 16),
+          _navRow(
+            showBack: true,
+            showOmit: true,
+            nextText: 'Revisar y Guardar',
+            onNext: () => setState(() => _currentStep = 4),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildStep6() {
+
+  // Step 5: Confirmación para guardar
+  Widget _buildStep5() {
     return _buildCard(
-      title: 'Resumen',
+      title: 'Confirmar Venta',
       icon: Icons.check,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Summary
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
             ),
             child: Column(
               children: [
                 _buildSummaryRow('Tipo:', _tipoTransferencia),
                 _buildSummaryRow('Código:', _codigoController.text),
-                _buildSummaryRow('Fecha:', _fechaController.text),
+                _buildSummaryRow('Monto:', 'S/ ${double.tryParse(_montoController.text.replaceAll(',', '.'))?.toStringAsFixed(2) ?? "0.00"}'),
+                _buildSummaryRow('Fecha:', _fechaController.text.isNotEmpty ? _fechaController.text : '—'),
+                _buildSummaryRow('Hora:', _horaController.text.isNotEmpty ? _horaController.text : '—'),
                 _buildSummaryRow('Cliente:', _clienteNombreController.text.isNotEmpty ? _clienteNombreController.text : 'Sin cliente'),
-                const Divider(height: 24),
                 if (_productos.isNotEmpty) ...[
+                  const Divider(height: 24),
                   ..._productos.map((p) => _buildSummaryRow(
                     '${p.nombre}:',
                     'S/ ${p.subtotal.toStringAsFixed(2)}',
                   )),
-                  const Divider(height: 24),
                 ],
+                const Divider(height: 24),
                 _buildSummaryRow(
                   'Total:',
                   'S/ ${_totalVenta.toStringAsFixed(2)}',
@@ -837,64 +954,22 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               ],
             ),
           ),
-          
           const SizedBox(height: 20),
-          
-          // Save button
-          Container(
-            height: 54,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, Color(0xFFFF8C42)],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _isSaving ? null : _guardarVenta,
-                borderRadius: BorderRadius.circular(16),
-                child: Center(
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.save, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              'Guardar Venta',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-            ),
-          ),
+          _navRow(showBack: true, nextText: 'Guardar Venta', onNext: () async {
+            final confirmed = await ConfirmationDialog.show(
+              context,
+              title: 'Guardar Venta',
+              message: '¿Estás seguro de guardar esta venta de S/ ${_totalVenta.toStringAsFixed(2)}?',
+            );
+            if (confirmed == true && mounted) {
+              _guardarVenta();
+            }
+          }),
         ],
       ),
     );
   }
-  
+
   Widget _buildCard({required String title, required IconData icon, required Widget child}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -921,20 +996,12 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                   color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
+                child: Icon(icon, color: AppColors.primary, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
             ],
           ),
@@ -944,7 +1011,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       ),
     );
   }
-  
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -962,44 +1029,25 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 15,
-        ),
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
         decoration: InputDecoration(
           hintText: label,
-          hintStyle: TextStyle(
-            color: AppColors.textSecondary.withOpacity(0.6),
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            icon,
-            color: AppColors.textSecondary.withOpacity(0.7),
-            size: 20,
-          ),
+          hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6), fontSize: 14),
+          prefixIcon: Icon(icon, color: AppColors.textSecondary.withOpacity(0.7), size: 20),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
   }
-  
+
   Widget _buildSummaryRow(String label, String value, {bool isBold = false, Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
           Text(
             value,
             style: TextStyle(

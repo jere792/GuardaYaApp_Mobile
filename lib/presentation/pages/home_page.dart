@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:guardaya_app/data/models/empresa_colors.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/connectivity_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/theme_provider.dart';
 
 class HomePage extends ConsumerWidget {
@@ -16,8 +15,6 @@ class HomePage extends ConsumerWidget {
     final usuario = authState.usuario;
     final rolId = usuario?.rolId ?? 'empleado';
     final isOffline = authState.isOffline;
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
-
     // Escuchar cambios de conectividad para actualizar el estado offline
     ref.listen(connectivityProvider, (previous, next) {
       if (previous != next) {
@@ -29,7 +26,7 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: empresaColors.primary,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         title: const Text(
@@ -59,7 +56,7 @@ class HomePage extends ConsumerWidget {
             ),
         ],
       ),
-      body: _buildContentByRole(rolId, usuario, isOffline, empresaColors, context),
+      body: _buildContentByRole(rolId, usuario, isOffline, context),
     );
   }
 
@@ -67,30 +64,27 @@ class HomePage extends ConsumerWidget {
     String rolId,
     dynamic usuario,
     bool isOffline,
-    EmpresaColors colors,
     BuildContext context,
   ) {
     switch (rolId) {
       case 'super_admin':
-        return SuperAdminView(usuario: usuario, isOffline: isOffline, colors: colors);
-      case 'admin':
-        return AdminView(usuario: usuario, isOffline: isOffline, colors: colors);
-      case 'empleado':
-        return EmpleadoView(usuario: usuario, isOffline: isOffline, colors: colors);
-      default:
-        return EmpleadoView(usuario: usuario, isOffline: isOffline, colors: colors);
+        return SuperAdminView(usuario: usuario, isOffline: isOffline);
+        case 'admin':
+          return AdminView(usuario: usuario, isOffline: isOffline);
+        case 'empleado':
+          return EmpleadoView(usuario: usuario, isOffline: isOffline);
+        default:
+          return EmpleadoView(usuario: usuario, isOffline: isOffline);
     }
   }
 }
 
 class _HeaderWelcome extends StatelessWidget {
   final dynamic usuario;
-  final EmpresaColors colors;
   final String rolLabel;
 
   const _HeaderWelcome({
     required this.usuario,
-    required this.colors,
     required this.rolLabel,
   });
 
@@ -100,7 +94,7 @@ class _HeaderWelcome extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colors.primary,
+        color: AppColors.primary,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -271,13 +265,11 @@ class _MenuGrid extends StatelessWidget {
 class SuperAdminView extends StatelessWidget {
   final dynamic usuario;
   final bool isOffline;
-  final EmpresaColors colors;
 
   const SuperAdminView({
     super.key,
     required this.usuario,
     required this.isOffline,
-    required this.colors,
   });
 
   @override
@@ -287,7 +279,6 @@ class SuperAdminView extends StatelessWidget {
       children: [
         _HeaderWelcome(
           usuario: usuario,
-          colors: colors,
           rolLabel: 'Super Administrador',
         ),
         const SizedBox(height: 20),
@@ -318,7 +309,7 @@ class SuperAdminView extends StatelessWidget {
                     icon: Icons.people,
                     title: 'Usuarios',
                     subtitle: 'Todos los empleados',
-                    color: colors.primary,
+                    color: AppColors.primary,
                     onTap: () => context.push('/empleados'),
                   ),
                   _MenuCard(
@@ -361,13 +352,11 @@ class SuperAdminView extends StatelessWidget {
 class AdminView extends StatelessWidget {
   final dynamic usuario;
   final bool isOffline;
-  final EmpresaColors colors;
 
   const AdminView({
     super.key,
     required this.usuario,
     required this.isOffline,
-    required this.colors,
   });
 
   @override
@@ -377,7 +366,6 @@ class AdminView extends StatelessWidget {
       children: [
         _HeaderWelcome(
           usuario: usuario,
-          colors: colors,
           rolLabel: 'Administrador',
         ),
         const SizedBox(height: 20),
@@ -409,7 +397,7 @@ class AdminView extends StatelessWidget {
                     icon: Icons.add_circle,
                     title: 'Nueva Venta',
                     subtitle: 'Registrar venta',
-                    color: colors.primary,
+                    color: AppColors.primary,
                     onTap: () => context.push('/ventas/registrar'),
                   ),
                 ],
@@ -489,13 +477,11 @@ class AdminView extends StatelessWidget {
 class EmpleadoView extends StatelessWidget {
   final dynamic usuario;
   final bool isOffline;
-  final EmpresaColors colors;
 
   const EmpleadoView({
     super.key,
     required this.usuario,
     required this.isOffline,
-    required this.colors,
   });
 
   @override
@@ -505,7 +491,6 @@ class EmpleadoView extends StatelessWidget {
       children: [
         _HeaderWelcome(
           usuario: usuario,
-          colors: colors,
           rolLabel: 'Empleado',
         ),
         const SizedBox(height: 20),
@@ -530,7 +515,7 @@ class EmpleadoView extends StatelessWidget {
                     icon: Icons.add_circle,
                     title: 'Registrar Venta',
                     subtitle: 'Nueva venta con OCR',
-                    color: colors.primary,
+                    color: AppColors.primary,
                     onTap: () => context.push('/ventas/registrar'),
                   ),
                   _MenuCard(

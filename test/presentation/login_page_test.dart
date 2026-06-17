@@ -15,6 +15,7 @@ void main() {
 
       await tester.tap(find.byType(ElevatedButton));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Ingrese usuario y contraseña'), findsOneWidget);
     });

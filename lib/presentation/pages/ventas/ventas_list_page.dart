@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:guardaya_app/data/models/empresa_colors.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/domain/entities/venta.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
 import 'package:guardaya_app/presentation/providers/ventas_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -55,12 +54,11 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   @override
   Widget build(BuildContext context) {
     final ventasState = ref.watch(ventasProvider);
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ventas'),
-        backgroundColor: empresaColors.primary,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -78,17 +76,17 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
           // Header de fecha
           Container(
             padding: const EdgeInsets.all(16),
-            color: empresaColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withOpacity(0.1),
             child: Row(
               children: [
-                Icon(Icons.date_range, color: empresaColors.primary),
+                Icon(Icons.date_range, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Ventas del ${DateFormat('dd/MM/yyyy').format(_fechaSeleccionada)}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: empresaColors.primary,
+                    color: AppColors.primary,
                   ),
                 ),
                 const Spacer(),
@@ -96,7 +94,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
                   '${ventasState.ventas.length} ventas',
                   style: TextStyle(
                     fontSize: 14,
-                    color: empresaColors.primary.withOpacity(0.7),
+                    color: AppColors.primary.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -104,29 +102,29 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
           ),
           // Lista de ventas
           Expanded(
-            child: _buildContent(ventasState, empresaColors),
+            child: _buildContent(ventasState),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: empresaColors.primary,
+        backgroundColor: AppColors.primary,
         onPressed: () => context.push('/ventas/registrar'),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildContent(VentasState state, EmpresaColors colors) {
+  Widget _buildContent(VentasState state) {
     if (state.isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: colors.primary),
+            CircularProgressIndicator(color: AppColors.primary),
             const SizedBox(height: 16),
             Text(
               'Cargando ventas...',
-              style: TextStyle(color: colors.primary),
+              style: TextStyle(color: AppColors.primary),
             ),
           ],
         ),
@@ -156,7 +154,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
               ElevatedButton(
                 onPressed: _cargarVentas,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: colors.primary,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Reintentar'),
@@ -175,7 +173,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
             Icon(
               Icons.receipt_long_outlined,
               size: 64,
-              color: colors.primary.withOpacity(0.3),
+              color: AppColors.primary.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
@@ -203,7 +201,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
       itemCount: state.ventas.length,
       itemBuilder: (context, index) {
         final venta = state.ventas[index];
-        return _VentaCard(venta: venta, colors: colors);
+        return _VentaCard(venta: venta);
       },
     );
   }
@@ -211,9 +209,8 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
 
 class _VentaCard extends StatelessWidget {
   final Venta venta;
-  final EmpresaColors colors;
 
-  const _VentaCard({required this.venta, required this.colors});
+  const _VentaCard({required this.venta});
 
   Color _getEstadoColor(String estado) {
     switch (estado) {
@@ -355,7 +352,7 @@ class _VentaCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: colors.primary,
+                      color: AppColors.primary,
                     ),
                   ),
                 ],

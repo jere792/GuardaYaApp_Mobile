@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/presentation/providers/clientes_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 
 class ClienteDetailPage extends ConsumerWidget {
   final String clienteId;
@@ -13,7 +13,6 @@ class ClienteDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(clientesProvider);
     final c = state.clientes.where((c) => c.id == clienteId).firstOrNull;
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     if (c == null) {
       return Scaffold(
         body: Column(
@@ -22,7 +21,7 @@ class ClienteDetailPage extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
               decoration: BoxDecoration(
-                color: empresaColors.primary,
+                color: AppColors.primary,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -52,7 +51,7 @@ class ClienteDetailPage extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
             decoration: BoxDecoration(
-              color: empresaColors.primary,
+              color: AppColors.primary,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),

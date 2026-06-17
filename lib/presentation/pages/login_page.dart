@@ -19,7 +19,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
   final _focusNode = FocusNode();
   bool _obscurePassword = true;
   bool _isLoading = false;
-  String? _errorMessage;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -55,20 +54,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
     super.dispose();
   }
 
-  void _clearError() {
-    setState(() => _errorMessage = null);
-    ref.read(authProvider.notifier).clearError();
-  }
-
   void _handleLogin() async {
-    _clearError();
-    
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
       if (mounted) {
-        setState(() => _errorMessage = 'Ingrese usuario y contraseña');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ingrese usuario y contraseña'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
       return;
     }
@@ -95,32 +92,35 @@ class _LoginPageState extends ConsumerState<LoginPage>
       
       if (!mounted) return;
       
-      if (authState.error != null) {
-        setState(() {
-          _errorMessage = _getFriendlyError(authState.error);
-          _isLoading = false;
-        });
-      } else if (!authState.isAuthenticated) {
-        setState(() {
-          _errorMessage = 'Usuario o contraseña incorrectos';
-          _isLoading = false;
-        });
+      if (authState.error != null || !authState.isAuthenticated) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_getFriendlyError(authState.error)),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } else {
         setState(() => _isLoading = false);
       }
     } catch (e) {
       debugPrint('Login exception: $e');
       if (mounted) {
-        setState(() {
-          _errorMessage = 'Error de conexión. Intente nuevamente.';
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error de conexión. Intente nuevamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
 
   String _getFriendlyError(String? error) {
-    if (error == null) return '';
+    if (error == null) return 'Usuario o contraseña incorrectos';
     if (error.toLowerCase().contains('invalid') || 
         error.toLowerCase().contains('credentials') ||
         error.toLowerCase().contains('login')) {
@@ -338,39 +338,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
       );
     }
 
-    Widget buildErrorMessage() {
-      if (_errorMessage == null) return const SizedBox.shrink();
-      
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: AppColors.error.withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline,
-                color: AppColors.error, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                _errorMessage!,
-                style: TextStyle(
-                  color: AppColors.error,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     final content = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -475,8 +442,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   isPassword: true,
                   onSubmitted: _handleLogin,
                 ),
-                SizedBox(height: cardSpacing),
-                buildErrorMessage(),
                 SizedBox(height: cardSpacing),
                 buildLoginButton(),
                 SizedBox(height: isCompact ? 6.0 : 10.0),

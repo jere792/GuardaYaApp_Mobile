@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/presentation/providers/usuarios_provider.dart';
 
 class EmpleadoEditPage extends ConsumerStatefulWidget {
@@ -76,26 +76,23 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
             const SizedBox(height: 16),
             _buildField('Teléfono', _telefonoController, Icons.phone, keyboardType: TextInputType.phone),
             const SizedBox(height: 32),
-            Consumer(builder: (context, ref, _) {
-              final colors = ref.watch(empresaColorsSyncProvider);
-              return SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Cambios guardados')),
-                    );
-                    context.pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: const Text('Guardar Cambios', style: TextStyle(fontSize: 16)),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Cambios guardados')),
+                  );
+                  context.pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-              );
-            }),
+                child: const Text('Guardar Cambios', style: TextStyle(fontSize: 16)),
+              ),
+            ),
           ],
         ),
       ),

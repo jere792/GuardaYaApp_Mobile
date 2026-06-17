@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:guardaya_app/data/models/empresa_colors.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 
 class AppTheme {
   static ThemeData _baseTheme({
-    required EmpresaColors colors,
     required Brightness brightness,
   }) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: colors.primary,
+      seedColor: AppColors.primary,
       brightness: brightness,
     );
 
@@ -71,17 +70,11 @@ class AppTheme {
     );
   }
 
-  static ThemeData lightTheme({EmpresaColors? empresaColors}) {
-    return _baseTheme(
-      colors: empresaColors ?? const EmpresaColors(),
-      brightness: Brightness.light,
-    );
+  static ThemeData lightTheme() {
+    return _baseTheme(brightness: Brightness.light);
   }
 
-  static ThemeData darkTheme({EmpresaColors? empresaColors}) {
-    return _baseTheme(
-      colors: empresaColors ?? const EmpresaColors(),
-      brightness: Brightness.dark,
-    );
+  static ThemeData darkTheme() {
+    return _baseTheme(brightness: Brightness.dark);
   }
 }

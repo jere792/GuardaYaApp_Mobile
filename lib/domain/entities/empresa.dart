@@ -8,9 +8,6 @@ class Empresa extends Equatable {
   final String? telefono;
   final String? direccion;
   final String? rucDni;
-  final String colorPrimario;
-  final String colorSecundario;
-  final String colorAcento;
   final String? logoUrl;
   final String plan;
   final bool activo;
@@ -24,9 +21,6 @@ class Empresa extends Equatable {
     this.telefono,
     this.direccion,
     this.rucDni,
-    this.colorPrimario = '#000000',
-    this.colorSecundario = '#FFFFFF',
-    this.colorAcento = '#0000FF',
     this.logoUrl,
     this.plan = 'basico',
     required this.activo,
@@ -36,6 +30,6 @@ class Empresa extends Equatable {
   @override
   List<Object?> get props => [
     id, nombre, slug, emailContacto, telefono, direccion, rucDni,
-    colorPrimario, colorSecundario, colorAcento, logoUrl, plan, activo, createdAt,
+    logoUrl, plan, activo, createdAt,
   ];
 }

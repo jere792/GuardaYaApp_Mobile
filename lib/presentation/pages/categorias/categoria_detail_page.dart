@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/categorias_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 
 class CategoriaDetailPage extends ConsumerWidget {
   final String categoriaId;
@@ -14,7 +14,6 @@ class CategoriaDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(categoriasProvider);
     final cat = state.categorias.where((c) => c.id == categoriaId).firstOrNull;
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     final rolActual = ref.read(authProvider).usuario?.rolId ?? 'empleado';
     if (cat == null) {
       return Scaffold(
@@ -24,7 +23,7 @@ class CategoriaDetailPage extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
               decoration: BoxDecoration(
-                color: empresaColors.primary,
+                color: AppColors.primary,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -54,7 +53,7 @@ class CategoriaDetailPage extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
             decoration: BoxDecoration(
-              color: empresaColors.primary,
+              color: AppColors.primary,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),

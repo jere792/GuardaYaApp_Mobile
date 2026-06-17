@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/domain/entities/cliente.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/clientes_provider.dart';
-import 'package:guardaya_app/presentation/providers/empresa_colors_provider.dart';
+import 'package:guardaya_app/core/theme/app_colors.dart';
 
 class ClientesListPage extends ConsumerStatefulWidget {
   const ClientesListPage({super.key});
@@ -33,7 +33,6 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(clientesProvider);
-    final empresaColors = ref.watch(empresaColorsSyncProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     final todos = state.clientes;
@@ -48,7 +47,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(4, 48, 16, 20),
             decoration: BoxDecoration(
-              color: empresaColors.primary,
+              color: AppColors.primary,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),

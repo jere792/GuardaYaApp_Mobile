@@ -24,6 +24,7 @@ void main() async {
 
   // Inicializar WorkManager para sync en background
   await SyncService.initialize();
+  await SyncService.registerPeriodicSync();
 
   // Crear un container para hacer checkAuth antes de runApp
   final container = ProviderContainer();

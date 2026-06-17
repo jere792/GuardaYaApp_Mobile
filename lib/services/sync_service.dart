@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -71,7 +70,12 @@ void callbackDispatcher() {
           ventaMap.remove('retry_count');
           ventaMap.remove('imagen_yape_local_path');
           ventaMap.remove('imagen_entrega_local_path');
-          // Ajustar nombres de campos si es necesario
+          ventaMap.remove('cliente_id');
+          // Convertir fecha_yape a ISO 8601
+          if (ventaMap['fecha_yape'] != null && ventaMap['fecha_yape'] is String) {
+            final parsed = _parseFechaToIso(ventaMap['fecha_yape'] as String);
+            ventaMap['fecha_yape'] = parsed;
+          }
           ventaMap['created_at'] = ventaMap['created_at'] ?? DateTime.now().toIso8601String();
 
           await supabase.from('ventas').insert(ventaMap);
@@ -103,4 +107,30 @@ void callbackDispatcher() {
       return Future.value(false);
     }
   });
+}
+
+String? _parseFechaToIso(String fecha) {
+  try {
+    final parts = fecha.split(RegExp(r'[/-]'));
+    if (parts.length == 3 && parts[0].length <= 2) {
+      final dia = parts[0].padLeft(2, '0');
+      final mes = parts[1].padLeft(2, '0');
+      final anio = parts[2].length == 2 ? '20${parts[2]}' : parts[2];
+      return '$anio-$mes-${dia}T00:00:00.000Z';
+    }
+
+    const meses = {
+      'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04',
+      'may': '05', 'jun': '06', 'jul': '07', 'ago': '08',
+      'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12',
+    };
+    final textMatch = RegExp(r'(\d{1,2})\s+([a-z]{3})[a-z]*\.?\s+(\d{4})', caseSensitive: false).firstMatch(fecha);
+    if (textMatch != null) {
+      final dia = textMatch.group(1)!.padLeft(2, '0');
+      final mes = meses[textMatch.group(2)!.toLowerCase()] ?? '01';
+      final anio = textMatch.group(3)!;
+      return '$anio-$mes-${dia}T00:00:00.000Z';
+    }
+  } catch (_) {}
+  return fecha;
 }

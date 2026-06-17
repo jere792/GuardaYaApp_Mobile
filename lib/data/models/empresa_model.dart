@@ -8,9 +8,6 @@ class EmpresaModel {
   final String? telefono;
   final String? direccion;
   final String? rucDni;
-  final String colorPrimario;
-  final String colorSecundario;
-  final String colorAcento;
   final String? logoUrl;
   final String plan;
   final bool activo;
@@ -24,9 +21,6 @@ class EmpresaModel {
     this.telefono,
     this.direccion,
     this.rucDni,
-    this.colorPrimario = '#000000',
-    this.colorSecundario = '#FFFFFF',
-    this.colorAcento = '#0000FF',
     this.logoUrl,
     this.plan = 'basico',
     required this.activo,
@@ -42,9 +36,6 @@ class EmpresaModel {
       telefono: json['telefono'],
       direccion: json['direccion'],
       rucDni: json['ruc_dni'],
-      colorPrimario: json['color_primario'] ?? '#000000',
-      colorSecundario: json['color_secundario'] ?? '#FFFFFF',
-      colorAcento: json['color_acento'] ?? '#0000FF',
       logoUrl: json['logo_url'],
       plan: json['plan'] ?? 'basico',
       activo: json['activo'] ?? true,
@@ -60,9 +51,6 @@ class EmpresaModel {
     telefono: telefono,
     direccion: direccion,
     rucDni: rucDni,
-    colorPrimario: colorPrimario,
-    colorSecundario: colorSecundario,
-    colorAcento: colorAcento,
     logoUrl: logoUrl,
     plan: plan,
     activo: activo,

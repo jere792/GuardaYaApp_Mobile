@@ -11,5 +11,4 @@ class AppConstants {
   static const String jwtSessionKey = 'guardaya_session';
   static const String empresaIdKey = 'guardaya_empresa_id';
   static const String userKey = 'guardaya_user';
-  static const String empresaColorsKey = 'guardaya_empresa_colors';
 }

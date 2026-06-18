@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/core/errors/failures.dart';
@@ -12,14 +11,22 @@ import 'package:guardaya_app/domain/repositories/auth_repository.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final AuthDatasource _datasource;
 
+  static const Duration _sessionMaxDuration = Duration(days: 30);
+  static const Duration _offlineMaxDuration = Duration(days: 7);
+  static const Duration _tokenExpiryBuffer = Duration(hours: 1);
+  static const int _maxLoginAttempts = 5;
+  static const Duration _loginCooldown = Duration(minutes: 15);
+
   AuthRepositoryImpl(this._datasource);
 
   @override
   Future<Either<Failure, Usuario>> login(String username, String password) async {
     try {
-      debugPrint('AuthRepositoryImpl.login: Starting login for $username');
-      
-      // 1. Login validado contra public.usuarios con bcrypt (no usa Supabase Auth)
+      final attempts = await SecureStorage.getLoginAttempts();
+      if (attempts >= _maxLoginAttempts) {
+        return Left(AuthFailure('Demasiados intentos. Intenta de nuevo en $_loginCooldown.'));
+      }
+
       final loginData = await _datasource.login(username, password);
       final userData = loginData['user'] as Map<String, dynamic>?;
 
@@ -27,22 +34,33 @@ class AuthRepositoryImpl implements AuthRepository {
         return Left(AuthFailure('No se obtuvo datos de usuario'));
       }
 
-      debugPrint('AuthRepositoryImpl.login: User validated via bcrypt');
+      await SecureStorage.clearLoginAttempts();
       await SecureStorage.setOfflineMode(false);
 
-      // 2. Guardar usuario en local storage
       final usuario = UsuarioModel.fromJson(userData);
+      final token = loginData['token'] as String?;
+      final expiresAt = loginData['expires_at'] as String?;
 
       await SecureStorage.saveUser(jsonEncode(usuario.toJson()));
       await SecureStorage.saveEmpresaId(usuario.empresaId ?? '');
+      await SecureStorage.saveSessionStartedAt(DateTime.now());
+      await SecureStorage.saveLastVerifiedAt(DateTime.now());
 
-      debugPrint('AuthRepositoryImpl.login: Success!');
+      if (token != null) {
+        await SecureStorage.saveSession(token);
+      }
+      if (expiresAt != null) {
+        final parsed = DateTime.tryParse(expiresAt);
+        if (parsed != null) {
+          await SecureStorage.saveTokenExpiresAt(parsed);
+        }
+      }
+
       return Right(usuario.toEntity());
     } on AuthException catch (_) {
-      debugPrint('AuthRepositoryImpl.login: AuthException - Invalid credentials');
+      await SecureStorage.incrementLoginAttempts();
       return Left(AuthFailure('Usuario o contraseña incorrectos'));
     } catch (_) {
-      debugPrint('AuthRepositoryImpl.login: Exception - Connection error');
       return Left(ServerFailure('Error de conexión'));
     }
   }
@@ -50,11 +68,15 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      await _datasource.logout();
+      final token = await SecureStorage.getSession();
+      if (token != null) {
+        await _datasource.logout(token);
+      }
       await SecureStorage.clearAll();
       return const Right(null);
     } catch (e) {
-      return Left(CacheFailure(e.toString()));
+      await SecureStorage.clearAll();
+      return const Right(null);
     }
   }
 
@@ -73,9 +95,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  /// Verifica si hay un usuario guardado localmente.
-  /// Si hay internet, verifica que el usuario siga activo en el servidor.
-  /// Si no hay internet, confía en la sesión local (modo offline).
   @override
   Future<Either<Failure, bool>> isAuthenticated() async {
     try {
@@ -86,23 +105,91 @@ class AuthRepositoryImpl implements AuthRepository {
       final username = map['username'] as String?;
       if (username == null) return const Right(false);
 
-      // Verificar con servidor si hay conectividad
+      final sessionStartedAt = await SecureStorage.getSessionStartedAt();
+      if (sessionStartedAt != null) {
+        if (DateTime.now().difference(sessionStartedAt) > _sessionMaxDuration) {
+          await SecureStorage.clearAll();
+          return const Right(false);
+        }
+      }
+
+      // Verificar expiración del token
+      final expiresAt = await SecureStorage.getTokenExpiresAt();
+      if (expiresAt != null) {
+        if (DateTime.now().isAfter(expiresAt.subtract(_tokenExpiryBuffer))) {
+          final token = await SecureStorage.getSession();
+          if (token != null) {
+            try {
+              final refreshData = await _datasource.refreshSession(token);
+              final newToken = refreshData['token'] as String?;
+              final newExpiresAt = refreshData['expires_at'] as String?;
+              if (newToken != null) await SecureStorage.saveSession(newToken);
+              if (newExpiresAt != null) {
+                final parsed = DateTime.tryParse(newExpiresAt);
+                if (parsed != null) await SecureStorage.saveTokenExpiresAt(parsed);
+              }
+            } catch (_) {
+              await SecureStorage.clearAll();
+              return const Right(false);
+            }
+          } else {
+            await SecureStorage.clearAll();
+            return const Right(false);
+          }
+        }
+      }
+
       final isActive = await _datasource.verifyUsuarioActivo(username);
       if (isActive) {
         await SecureStorage.setOfflineMode(false);
+        await SecureStorage.saveLastVerifiedAt(DateTime.now());
         return const Right(true);
       }
 
-      // Si no hay internet o el servidor no responde, confiar en sesión local
-      // (modo offline)
+      final lastVerifiedAt = await SecureStorage.getLastVerifiedAt();
+      if (lastVerifiedAt != null) {
+        if (DateTime.now().difference(lastVerifiedAt) > _offlineMaxDuration) {
+          await SecureStorage.clearAll();
+          return const Right(false);
+        }
+      }
+
+      await SecureStorage.setOfflineMode(true);
       return const Right(true);
     } catch (e) {
-      // En caso de error (probablemente no hay internet), confiar en sesión local
+      final sessionStartedAt = await SecureStorage.getSessionStartedAt();
+      if (sessionStartedAt != null) {
+        if (DateTime.now().difference(sessionStartedAt) > _sessionMaxDuration) {
+          await SecureStorage.clearAll();
+          return const Right(false);
+        }
+      }
+
+      final lastVerifiedAt = await SecureStorage.getLastVerifiedAt();
+      if (lastVerifiedAt != null) {
+        if (DateTime.now().difference(lastVerifiedAt) > _offlineMaxDuration) {
+          await SecureStorage.clearAll();
+          return const Right(false);
+        }
+      }
+
+      // Si hay token local, intentar refresh antes de rendirnos
+      final token = await SecureStorage.getSession();
+      if (token != null) {
+        try {
+          final refreshData = await _datasource.refreshSession(token);
+          final newToken = refreshData['token'] as String?;
+          if (newToken != null) await SecureStorage.saveSession(newToken);
+          return const Right(true);
+        } catch (_) {
+          return const Right(true);
+        }
+      }
+
       return const Right(true);
     }
   }
 
-  /// No aplica en el nuevo sistema sin JWT. Mantiene compatibilidad.
   Future<Either<Failure, bool>> refreshSessionIfNeeded() async {
     return const Right(true);
   }

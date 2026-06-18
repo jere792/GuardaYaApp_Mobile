@@ -38,4 +38,14 @@ class SupabaseService {
       ),
     );
   }
+
+  /// Invoca una Edge Function con token de sesión en el header Authorization
+  static Future<dynamic> invokeAuthenticated(String functionName, Map<String, dynamic> body, String token) async {
+    final response = await supabase.functions.invoke(
+      functionName,
+      body: body,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return response.data;
+  }
 }

@@ -112,7 +112,7 @@ void callbackDispatcher() {
             'pending_ventas',
             {
               'sync_status': currentRetries >= 10 ? 'failed' : 'error',
-              'sync_error': e.toString().substring(0, 500),
+              'sync_error': e.toString().substring(0, 200),
               'retry_count': currentRetries,
             },
             where: 'id = ?',

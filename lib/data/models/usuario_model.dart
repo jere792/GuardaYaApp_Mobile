@@ -69,7 +69,7 @@ class UsuarioModel {
       'apellidos': apellidos,
       'telefono': telefono,
       'email': email,
-      'rol_id': rolId,
+      'rol_nombre': rolId,
       'activo': activo,
       'created_at': createdAt.toIso8601String(),
     };

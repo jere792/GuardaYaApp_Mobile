@@ -56,7 +56,7 @@ class UsuarioDatasource {
       }
 
       final response = await SupabaseService.withTimeout(
-        query.order('created_at', ascending: false),
+        query.order('created_at', ascending: false).limit(200),
         operation: 'listarUsuarios',
       );
 

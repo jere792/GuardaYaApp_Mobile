@@ -4,7 +4,7 @@ import 'package:guardaya_app/services/supabase_service.dart';
 class EmpresasDatasource {
   Future<List<dynamic>> listarEmpresas() async {
     try {
-      var query = SupabaseService.from('empresas').select().order('created_at', ascending: false);
+      var query = SupabaseService.from('empresas').select().limit(100).order('created_at', ascending: false);
       final response = await SupabaseService.withTimeout(
         query,
         operation: 'listarEmpresas',

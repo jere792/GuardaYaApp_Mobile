@@ -72,6 +72,38 @@ class SecureStorage {
     await _storage.write(key: 'offline_mode', value: value.toString());
   }
 
+  static Future<void> saveSessionStartedAt(DateTime value) async {
+    await _storage.write(key: 'session_started_at', value: value.toIso8601String());
+  }
+
+  static Future<DateTime?> getSessionStartedAt() async {
+    final value = await _storage.read(key: 'session_started_at');
+    return value != null ? DateTime.tryParse(value) : null;
+  }
+
+  static Future<void> saveLastVerifiedAt(DateTime value) async {
+    await _storage.write(key: 'last_verified_at', value: value.toIso8601String());
+  }
+
+  static Future<DateTime?> getLastVerifiedAt() async {
+    final value = await _storage.read(key: 'last_verified_at');
+    return value != null ? DateTime.tryParse(value) : null;
+  }
+
+  static Future<int> getLoginAttempts() async {
+    final value = await _storage.read(key: 'login_attempts');
+    return value != null ? int.tryParse(value) ?? 0 : 0;
+  }
+
+  static Future<void> incrementLoginAttempts() async {
+    final current = await getLoginAttempts();
+    await _storage.write(key: 'login_attempts', value: (current + 1).toString());
+  }
+
+  static Future<void> clearLoginAttempts() async {
+    await _storage.delete(key: 'login_attempts');
+  }
+
   static Future<void> clearAll() async {
     await _storage.deleteAll();
   }

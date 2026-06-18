@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
-import 'package:supabase/supabase.dart' show FunctionException;
 import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
 
@@ -23,16 +22,9 @@ class AuthDatasource {
       }
 
       return data;
-    } on AuthException catch (e) {
-      print('AuthDatasource.login: AuthException: ${e.message}');
-      throw AuthException(message: e.message);
-    } on FunctionException catch (e) {
-      final details = e.details as Map<String, dynamic>?;
-      final errorMsg = details?['error'] ?? 'Usuario o contraseña incorrectos';
-      print('AuthDatasource.login: FunctionException: $errorMsg');
-      throw AuthException(message: errorMsg);
+    } on AuthException {
+      rethrow;
     } catch (e) {
-      print('AuthDatasource.login: Exception: $e');
       throw AuthException(message: e.toString());
     }
   }
@@ -70,8 +62,30 @@ class AuthDatasource {
     }
   }
 
-  Future<void> logout() async {
-    // No hace nada en el servidor porque no usamos Supabase Auth
-    // El logout se maneja solo en el cliente (SecureStorage.clearAll)
+  Future<void> logout(String token) async {
+    try {
+      await SupabaseService.withTimeout(
+        SupabaseService.supabase.functions.invoke(
+          'logout',
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+        operation: 'logout',
+      );
+    } catch (_) {
+      // Si falla el logout remoto, igual limpiamos localmente
+    }
+  }
+
+  Future<Map<String, dynamic>> refreshSession(String token) async {
+    try {
+      final data = await SupabaseService.invokeAuthenticated('refresh-session', {}, token);
+      final result = data as Map<String, dynamic>?;
+      if (result == null || result['success'] != true) {
+        throw AuthException(message: 'No se pudo renovar la sesión');
+      }
+      return result;
+    } catch (e) {
+      throw AuthException(message: e.toString());
+    }
   }
 }

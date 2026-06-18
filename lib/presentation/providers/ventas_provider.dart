@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:guardaya_app/core/usecases/usecase.dart';
 import 'package:guardaya_app/data/datasources/local/db/pending_ventas_dao.dart';
 import 'package:guardaya_app/data/datasources/remote/ventas_datasource.dart';
 import 'package:guardaya_app/data/repositories/implementations/ventas_repository_impl.dart';
@@ -201,14 +199,19 @@ class VentasNotifier extends StateNotifier<VentasState> {
         );
         if (state.error != null) return;
       } else {
-        // Buscar por rango de fechas
         final inicio = fechaInicio ?? DateTime.now();
         final fin = fechaFin ?? inicio;
-        for (var d = inicio; !d.isAfter(fin); d = d.add(const Duration(days: 1))) {
-          final result = await _obtenerPorFecha(ObtenerVentasParams(empresaId: empresaId, fecha: d));
+        if (inicio == fin) {
+          final result = await _obtenerPorFecha(ObtenerVentasParams(empresaId: empresaId, fecha: inicio));
           result.fold(
             (failure) => {},
-            (ventas) => resultados.addAll(ventas),
+            (ventas) => resultados = ventas,
+          );
+        } else {
+          final result = await _obtenerPorRango(ObtenerVentasPorRangoParams(empresaId: empresaId, desde: inicio, hasta: fin));
+          result.fold(
+            (failure) => {},
+            (ventas) => resultados = ventas,
           );
         }
       }
@@ -244,23 +247,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
         // Actualizar la venta en la lista local
         final updatedVentas = state.ventas.map((v) {
           if (v.id == ventaId) {
-            return Venta(
-              id: v.id,
-              empresaId: v.empresaId,
-              usuarioId: v.usuarioId,
-              clienteId: v.clienteId,
-              codigoYape: v.codigoYape,
-              monto: v.monto,
-              clienteNombre: v.clienteNombre,
-              clienteTelefono: v.clienteTelefono,
-              fechaYape: v.fechaYape,
-              descripcion: v.descripcion,
-              estado: nuevoEstado,
-              imagenYapeUrl: v.imagenYapeUrl,
-              imagenEntregaUrl: v.imagenEntregaUrl,
-              createdAt: v.createdAt,
-              updatedAt: DateTime.now(),
-            );
+            return v.copyWith(estado: nuevoEstado, updatedAt: DateTime.now());
           }
           return v;
         }).toList();

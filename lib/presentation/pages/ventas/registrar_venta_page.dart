@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -76,6 +77,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   bool _isOffline = false;
   bool _codigoDuplicado = false;
   bool _verificandoCodigo = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -91,9 +93,10 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   }
 
   void _onCodigoChanged() {
+    _debounce?.cancel();
     final codigo = _codigoController.text.trim();
     if (codigo.length >= 4 && !_isOffline) {
-      _verificarCodigoDuplicado(codigo);
+      _debounce = Timer(const Duration(milliseconds: 500), () => _verificarCodigoDuplicado(codigo));
     } else {
       if (_codigoDuplicado) setState(() => _codigoDuplicado = false);
     }
@@ -117,6 +120,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _codigoController.removeListener(_onCodigoChanged);
     _codigoController.dispose();
     _montoController.dispose();
@@ -129,6 +133,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     _productoPrecioController.dispose();
     _clienteSearchController.dispose();
     _productoSearchController.dispose();
+    OcrService.dispose();
     super.dispose();
   }
 

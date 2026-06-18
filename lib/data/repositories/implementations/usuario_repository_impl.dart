@@ -68,4 +68,30 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> actualizarUsuario({
+    required String userId,
+    required String nombre,
+    required String username,
+    String? email,
+    String? telefono,
+    required String rolNombre,
+  }) async {
+    try {
+      await _datasource.actualizarUsuario(
+        userId: userId,
+        nombre: nombre,
+        username: username,
+        email: email,
+        telefono: telefono,
+        rolNombre: rolNombre,
+      );
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

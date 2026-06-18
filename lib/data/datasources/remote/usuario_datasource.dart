@@ -77,6 +77,39 @@ class UsuarioDatasource {
     }
   }
 
+  /// Actualizar datos básicos de un usuario (nombre, username, email, teléfono, rol)
+  Future<Map<String, dynamic>> actualizarUsuario({
+    required String userId,
+    required String nombre,
+    required String username,
+    String? email,
+    String? telefono,
+    required String rolNombre,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{
+        'nombre': nombre,
+        'username': username,
+        'rol_nombre': rolNombre,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      if (email != null) updateData['email'] = email;
+      if (telefono != null) updateData['telefono'] = telefono;
+
+      await SupabaseService.withTimeout(
+        SupabaseService.from('usuarios')
+            .update(updateData)
+            .eq('id', userId),
+        operation: 'actualizarUsuario',
+      );
+      return {'success': true};
+    } on PostgrestException catch (e) {
+      throw ServerException(message: e.message);
+    } catch (e) {
+      throw ServerException(message: e.toString());
+    }
+  }
+
   /// Desactivar usuario (query directa)
   Future<Map<String, dynamic>> desactivarUsuario(String userId) async {
     try {

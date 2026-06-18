@@ -11,12 +11,22 @@ class EmpleadoDetailPage extends ConsumerWidget {
   const EmpleadoDetailPage({super.key, required this.empleadoId});
 
   String _rolLabel(String rolId) {
-    switch (rolId) {
+    switch (rolId.toLowerCase()) {
       case 'super_admin':
+      case 'superadministrador':
+      case 'c63abe3d-5de8-442b-b8d8-9738ad9a7be5':
         return 'Super Administrador';
       case 'admin':
+      case 'administrador':
+      case '6801325e-df02-4391-a882-66247e664dcf':
         return 'Administrador';
+      case 'empleado':
+      case '77cdd9df-e7fe-4984-9bd9-9ab2168abf5b':
+        return 'Empleado';
       default:
+        final id = rolId.toLowerCase();
+        if (id.contains('admin')) return 'Administrador';
+        if (id.contains('super')) return 'Super Administrador';
         return 'Empleado';
     }
   }
@@ -83,7 +93,7 @@ class EmpleadoDetailPage extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   _rolLabel(empleado.rolId),
-                  style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.8)),
+                  style: const TextStyle(fontSize: 14, color: AppColors.primary, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 Container(

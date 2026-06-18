@@ -39,11 +39,19 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
     switch (rolId.toLowerCase()) {
       case 'super_admin':
       case 'superadministrador':
+      case 'c63abe3d-5de8-442b-b8d8-9738ad9a7be5':
         return 'Super Admin';
       case 'admin':
       case 'administrador':
+      case '6801325e-df02-4391-a882-66247e664dcf':
         return 'Admin';
+      case 'empleado':
+      case '77cdd9df-e7fe-4984-9bd9-9ab2168abf5b':
+        return 'Empleado';
       default:
+        final id = rolId.toLowerCase();
+        if (id.contains('admin')) return 'Admin';
+        if (id.contains('super')) return 'Super Admin';
         return 'Empleado';
     }
   }
@@ -130,7 +138,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                                   crossAxisCount: 2,
                                   crossAxisSpacing: 12,
                                   mainAxisSpacing: 12,
-                                  childAspectRatio: 0.82,
+                                  childAspectRatio: 0.73,
                                 ),
                                 itemBuilder: (context, index) {
                                   final emp = empleados[index];
@@ -397,13 +405,13 @@ class _EmpleadoCard extends StatelessWidget {
             : BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: CircleAvatar(
-                radius: 22,
+                radius: 24,
                 backgroundColor: isActive ? AppColors.primary : Colors.grey,
                 foregroundColor: Colors.white,
                 child: Text(
@@ -411,7 +419,7 @@ class _EmpleadoCard extends StatelessWidget {
                           ? empleado.nombre.substring(0, 1)
                           : '?')
                       .toUpperCase(),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -421,7 +429,7 @@ class _EmpleadoCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: isActive
                     ? colorScheme.onSurface
@@ -434,7 +442,7 @@ class _EmpleadoCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: isActive
                     ? colorScheme.onSurfaceVariant
                     : colorScheme.onSurface.withValues(alpha: 0.4),
@@ -443,7 +451,7 @@ class _EmpleadoCard extends StatelessWidget {
             Text(
               rolLabel,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: AppColors.primary.withValues(alpha: isActive ? 1.0 : 0.4),
               ),
@@ -474,7 +482,7 @@ class _EmpleadoCard extends StatelessWidget {
                     onTap: onDesactivar,
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: isActive
                             ? Colors.red.withValues(alpha: 0.1)
@@ -482,8 +490,8 @@ class _EmpleadoCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
-                        isActive ? Icons.block : Icons.check_circle_outline,
-                        size: 14,
+                        isActive ? Icons.delete_outline : Icons.restore_from_trash,
+                        size: 20,
                         color: isActive ? Colors.red : Colors.green,
                       ),
                     ),

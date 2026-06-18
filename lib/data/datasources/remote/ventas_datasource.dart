@@ -56,6 +56,23 @@ class VentasDatasource {
     return response;
   }
 
+  Future<List<Map<String, dynamic>>> obtenerVentasPorRango(String empresaId, DateTime desde, DateTime hasta) async {
+    final inicio = DateTime(desde.year, desde.month, desde.day).toIso8601String();
+    final fin = DateTime(hasta.year, hasta.month, hasta.day, 23, 59, 59).toIso8601String();
+
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .select()
+        .eq('empresa_id', empresaId)
+        .gte('created_at', inicio)
+        .lte('created_at', fin)
+        .order('created_at', ascending: false),
+      operation: 'obtenerVentasPorRango',
+    );
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
   Future<Map<String, dynamic>> obtenerVentaPorId(String ventaId) async {
     final response = await SupabaseService.withTimeout(
       SupabaseService.from('ventas')

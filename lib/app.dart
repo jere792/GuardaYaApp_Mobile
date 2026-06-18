@@ -23,6 +23,7 @@ import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/pages/productos/producto_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/productos/producto_form_page.dart';
 import 'package:guardaya_app/presentation/pages/productos/productos_list_page.dart';
+import 'package:guardaya_app/presentation/pages/reportes/reportes_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/theme_provider.dart';
 
@@ -53,6 +54,7 @@ const Map<String, List<String>> _routeRoles = {
   '/productos/crear': ['super_admin', 'admin'],
   '/productos/:id': ['super_admin', 'admin', 'empleado'],
   '/productos/editar/:id': ['super_admin', 'admin'],
+  '/reportes': ['super_admin', 'admin', 'empleado'],
 };
 
 bool _isRouteAllowed(String route, String? rol) {
@@ -169,6 +171,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/productos/editar/:id',
         builder: (context, state) => ProductoFormPage(productoId: state.pathParameters['id']!),
       ),
+      GoRoute(path: '/reportes', builder: (context, state) => const ReportesPage()),
       GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),
     ],
   );

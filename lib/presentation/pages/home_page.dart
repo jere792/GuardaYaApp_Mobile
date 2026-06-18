@@ -293,7 +293,7 @@ class SuperAdminView extends StatelessWidget {
           _Section(title: 'Gestión', items: [
             _MenuCard(icon: Icons.business, title: 'Empresas', subtitle: 'Gestionar empresas'),
             _MenuCard(icon: Icons.people, title: 'Usuarios', subtitle: 'Todos los empleados', onTap: () => context.push('/empleados')),
-            _MenuCard(icon: Icons.analytics, title: 'Reportes', subtitle: 'Métricas globales'),
+            _MenuCard(icon: Icons.analytics, title: 'Reportes', subtitle: 'Métricas globales', onTap: () => context.push('/reportes')),
             _MenuCard(icon: Icons.settings, title: 'Configuración', subtitle: 'Ajustes del sistema'),
           ]),
         ]);
@@ -330,7 +330,7 @@ class AdminView extends StatelessWidget {
             _MenuCard(icon: Icons.people, title: 'Empleados', subtitle: 'Gestionar equipo', onTap: () => context.push('/empleados')),
             _MenuCard(icon: Icons.category, title: 'Categorías', subtitle: 'Gestionar categorías', onTap: () => context.push('/categorias')),
             _MenuCard(icon: Icons.people_outline, title: 'Clientes', subtitle: 'Gestionar clientes', onTap: () => context.push('/clientes')),
-            _MenuCard(icon: Icons.analytics, title: 'Reportes', subtitle: 'Métricas', isEnabled: false),
+            _MenuCard(icon: Icons.analytics, title: 'Reportes', subtitle: 'Métricas', onTap: () => context.push('/reportes')),
           ]),
         ]);
   }

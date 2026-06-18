@@ -11,6 +11,7 @@ import 'package:guardaya_app/domain/usecases/ventas/buscar_venta_por_telefono.da
 import 'package:guardaya_app/domain/usecases/ventas/cambiar_estado_venta.dart';
 import 'package:guardaya_app/domain/usecases/ventas/obtener_venta_por_id.dart';
 import 'package:guardaya_app/domain/usecases/ventas/obtener_ventas_por_fecha.dart';
+import 'package:guardaya_app/domain/usecases/ventas/obtener_ventas_por_rango.dart';
 import 'package:guardaya_app/domain/usecases/ventas/registrar_venta.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
 
@@ -22,6 +23,7 @@ final ventasProvider = StateNotifierProvider<VentasNotifier, VentasState>((ref) 
     buscarPorTelefono: ref.watch(buscarPorTelefonoProvider),
     cambiarEstado: ref.watch(cambiarEstadoVentaProvider),
     obtenerPorId: ref.watch(obtenerVentaPorIdProvider),
+    obtenerPorRango: ref.watch(obtenerVentasPorRangoProvider),
   );
 });
 
@@ -63,6 +65,10 @@ final obtenerVentaPorIdProvider = Provider<ObtenerVentaPorId>((ref) {
   return ObtenerVentaPorId(ref.watch(ventasRepositoryProvider));
 });
 
+final obtenerVentasPorRangoProvider = Provider<ObtenerVentasPorRango>((ref) {
+  return ObtenerVentasPorRango(ref.watch(ventasRepositoryProvider));
+});
+
 class VentasState {
   final List<Venta> ventas;
   final Venta? ventaSeleccionada;
@@ -98,6 +104,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
   final BuscarVentaPorTelefono _buscarPorTelefono;
   final CambiarEstadoVenta _cambiarEstado;
   final ObtenerVentaPorId _obtenerPorId;
+  final ObtenerVentasPorRango _obtenerPorRango;
 
   VentasNotifier({
     required RegistrarVenta registrar,
@@ -106,12 +113,14 @@ class VentasNotifier extends StateNotifier<VentasState> {
     required BuscarVentaPorTelefono buscarPorTelefono,
     required CambiarEstadoVenta cambiarEstado,
     required ObtenerVentaPorId obtenerPorId,
+    required ObtenerVentasPorRango obtenerPorRango,
   })  : _registrar = registrar,
         _obtenerPorFecha = obtenerPorFecha,
         _buscarPorCodigo = buscarPorCodigo,
         _buscarPorTelefono = buscarPorTelefono,
         _cambiarEstado = cambiarEstado,
         _obtenerPorId = obtenerPorId,
+        _obtenerPorRango = obtenerPorRango,
         super(const VentasState());
 
   Future<void> obtenerVentaPorId(String ventaId) async {
@@ -215,6 +224,15 @@ class VentasNotifier extends StateNotifier<VentasState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  Future<void> obtenerVentasPorRango(String empresaId, DateTime desde, DateTime hasta) async {
+    state = state.copyWith(isLoading: true, error: null);
+    final result = await _obtenerPorRango(ObtenerVentasPorRangoParams(empresaId: empresaId, desde: desde, hasta: hasta));
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (ventas) => state = state.copyWith(isLoading: false, ventas: ventas),
+    );
   }
 
   Future<void> cambiarEstado(String ventaId, String nuevoEstado) async {

@@ -291,7 +291,7 @@ class SuperAdminView extends StatelessWidget {
         sections: [
           _Section(title: 'Gestión', items: [
             _MenuCard(icon: Icons.business, title: 'Empresas', subtitle: 'Gestionar empresas'),
-            _MenuCard(icon: Icons.people, title: 'Usuarios', subtitle: 'Todos los empleados', onTap: () => context.push('/empleados')),
+            _MenuCard(icon: Icons.people, title: 'Usuarios', subtitle: 'Gesti\u00f3n de usuarios', onTap: () => context.push('/admin/usuarios')),
             _MenuCard(icon: Icons.analytics, title: 'Reportes', subtitle: 'Métricas globales', onTap: () => context.push('/reportes')),
             _MenuCard(icon: Icons.settings, title: 'Configuración', subtitle: 'Ajustes del sistema'),
           ]),

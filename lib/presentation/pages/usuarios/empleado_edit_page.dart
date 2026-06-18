@@ -146,7 +146,10 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
                 labelText: 'Rol',
                 prefixIcon: const Icon(Icons.badge_outlined),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-
+                filled: true,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade800
+                    : Colors.grey.shade100,
               ),
               items: rolesDisponibles.map((rol) => DropdownMenuItem(
                 value: rol,
@@ -181,6 +184,7 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
   }
 
   Widget _buildField(String label, TextEditingController controller, IconData icon, {TextInputType? keyboardType}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
@@ -189,7 +193,7 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
         prefixIcon: Icon(icon),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
       ),
     );
   }

@@ -20,14 +20,12 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   final _telefonoController = TextEditingController();
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
-  bool _showFilters = true;
+  bool _showFilters = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _cargarVentasDelDia();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _cargarVentasDelDia());
   }
 
   @override
@@ -55,11 +53,8 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     );
     if (fecha != null) {
       setState(() {
-        if (inicio) {
-          _fechaInicio = fecha;
-        } else {
-          _fechaFin = fecha;
-        }
+        if (inicio) _fechaInicio = fecha;
+        else _fechaFin = fecha;
       });
     }
   }
@@ -102,6 +97,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   @override
   Widget build(BuildContext context) {
     final ventasState = ref.watch(ventasProvider);
+    final total = ventasState.ventas.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -110,12 +106,16 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
         actions: [
           IconButton(
             icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
             onPressed: () => setState(() => _showFilters = !_showFilters),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => context.push('/ventas/registrar'),
           ),
         ],
       ),
@@ -124,11 +124,6 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
           if (_showFilters) _buildFilterPanel(),
           Expanded(child: _buildContent(ventasState)),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () => context.push('/ventas/registrar'),
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -141,55 +136,19 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
         children: [
           Row(
             children: [
-              Expanded(
-                child: _filterField(
-                  controller: _codigoController,
-                  hint: 'Código de operación',
-                  icon: Icons.qr_code,
-                ),
-              ),
+              Expanded(child: _filterField(controller: _codigoController, hint: 'Código de operación', icon: Icons.qr_code)),
               const SizedBox(width: 8),
-              Expanded(
-                child: _filterField(
-                  controller: _telefonoController,
-                  hint: 'Teléfono',
-                  icon: Icons.phone,
-                  keyboardType: TextInputType.phone,
-                ),
-              ),
+              Expanded(child: _filterField(controller: _telefonoController, hint: 'Teléfono', icon: Icons.phone, keyboardType: TextInputType.phone)),
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _filterField(
-                  controller: _nombreController,
-                  hint: 'Nombre del cliente',
-                  icon: Icons.person,
-                ),
-              ),
-            ],
-          ),
+          _filterField(controller: _nombreController, hint: 'Nombre del cliente', icon: Icons.person),
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(
-                child: _dateChip(
-                  label: _fechaInicio != null ? DateFormat('dd/MM/yyyy').format(_fechaInicio!) : 'Fecha inicio',
-                  onTap: () => _seleccionarFecha(inicio: true),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
-                child: Icon(Icons.arrow_forward, size: 16, color: AppColors.textSecondary),
-              ),
-              Expanded(
-                child: _dateChip(
-                  label: _fechaFin != null ? DateFormat('dd/MM/yyyy').format(_fechaFin!) : 'Fecha fin',
-                  onTap: () => _seleccionarFecha(inicio: false),
-                ),
-              ),
+              Expanded(child: _dateChip(label: _fechaInicio != null ? DateFormat('dd/MM/yyyy').format(_fechaInicio!) : 'Fecha inicio', onTap: () => _seleccionarFecha(inicio: true))),
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward, size: 16, color: AppColors.textSecondary)),
+              Expanded(child: _dateChip(label: _fechaFin != null ? DateFormat('dd/MM/yyyy').format(_fechaFin!) : 'Fecha fin', onTap: () => _seleccionarFecha(inicio: false))),
             ],
           ),
           const SizedBox(height: 8),
@@ -202,11 +161,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
                     onPressed: _buscar,
                     icon: const Icon(Icons.search, size: 18),
                     label: const Text('Buscar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                   ),
                 ),
               ),
@@ -217,10 +172,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
                   onPressed: _limpiarFiltros,
                   icon: const Icon(Icons.clear, size: 18),
                   label: const Text('Limpiar'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    foregroundColor: Colors.grey.shade700,
-                  ),
+                  style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), foregroundColor: Colors.grey.shade700),
                 ),
               ),
             ],
@@ -230,19 +182,10 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     );
   }
 
-  Widget _filterField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
+  Widget _filterField({required TextEditingController controller, required String hint, required IconData icon, TextInputType keyboardType = TextInputType.text}) {
     return Container(
       height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.divider),
-      ),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.divider)),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
@@ -264,11 +207,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
       child: Container(
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.divider),
-        ),
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.divider)),
         child: Row(
           children: [
             Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
@@ -324,26 +263,10 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
       );
     }
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          color: AppColors.primary.withOpacity(0.05),
-          child: Row(
-            children: [
-              Text('${state.ventas.length} resultado(s)',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.primary)),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: state.ventas.length,
-            itemBuilder: (context, index) => _VentaCard(venta: state.ventas[index]),
-          ),
-        ),
-      ],
+    return ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount: state.ventas.length,
+      itemBuilder: (context, index) => _VentaCard(venta: state.ventas[index]),
     );
   }
 }
@@ -389,12 +312,9 @@ class _VentaCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      venta.clienteNombre ?? 'Cliente sin nombre',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: Text(venta.clienteNombre ?? 'Cliente sin nombre',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -403,10 +323,8 @@ class _VentaCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: _getEstadoColor(venta.estado).withOpacity(0.3)),
                     ),
-                    child: Text(
-                      _getEstadoLabel(venta.estado),
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _getEstadoColor(venta.estado)),
-                    ),
+                    child: Text(_getEstadoLabel(venta.estado),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _getEstadoColor(venta.estado))),
                   ),
                 ],
               ),
@@ -440,9 +358,11 @@ class _VentaCard extends StatelessWidget {
                 children: [
                   if (venta.descripcion != null)
                     Expanded(
-                      child: Text(venta.descripcion!, style: TextStyle(fontSize: 13, color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      child: Text(venta.descripcion!, style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
-                  Text(currencyFormat.format(venta.monto), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  Text(currencyFormat.format(venta.monto),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
                 ],
               ),
             ],

@@ -103,7 +103,7 @@ class _CrearEmpleadoPageState extends ConsumerState<CrearEmpleadoPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Crear Empleado'),
-        backgroundColor: colorScheme.primary,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

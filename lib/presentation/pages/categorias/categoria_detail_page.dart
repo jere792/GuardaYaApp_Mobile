@@ -17,74 +17,54 @@ class CategoriaDetailPage extends ConsumerWidget {
     final rolActual = ref.read(authProvider).usuario?.rolId ?? 'empleado';
     if (cat == null) {
       return Scaffold(
-        body: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                ],
-              ),
-            ),
-            const Expanded(child: Center(child: Text('Categoría no encontrada'))),
-          ],
+        appBar: AppBar(
+          title: const Text('Detalle de Categoría'),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
         ),
+        body: const Center(child: Text('Categoría no encontrada')),
       );
     }
 
     final isActive = cat.activo;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detalle de Categoría'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        actions: [
+          if (rolActual != 'empleado')
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => context.push('/categorias/editar/${cat.id}'),
+            ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
+            padding: const EdgeInsets.all(24),
+            color: AppColors.primary.withValues(alpha: 0.08),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                  const Spacer(),
-                  if (rolActual != 'empleado')
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                      onPressed: () => context.push('/categorias/editar/${cat.id}'),
-                    ),
-                  ],
-                ),
                 CircleAvatar(
                   radius: 36,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  child: Icon(Icons.category, size: 36, color: Colors.white),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                  child: Icon(Icons.category, size: 36, color: AppColors.primary),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  cat.nombre,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
+                Text(cat.nombre,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
@@ -142,7 +122,7 @@ class _InfoTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 20, color: colorScheme.primary),
+        Icon(icon, size: 20, color: AppColors.primary),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,

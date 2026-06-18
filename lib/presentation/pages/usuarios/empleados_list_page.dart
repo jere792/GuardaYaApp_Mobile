@@ -64,26 +64,37 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
     final inactivos = todos.length - activos;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_mostrarInactivos ? 'Inactivos' : 'Empleados'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (_mostrarInactivos) {
+              setState(() => _mostrarInactivos = false);
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
+        ),
+        actions: [
+          if (rolActual != 'empleado')
+            IconButton(
+              icon: Icon(_mostrarInactivos ? Icons.people : Icons.delete_sweep),
+              onPressed: () => setState(() => _mostrarInactivos = !_mostrarInactivos),
+              tooltip: _mostrarInactivos ? 'Ver activos' : 'Ver inactivos',
+            ),
+          if (rolActual != 'empleado' && !_mostrarInactivos)
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: () => context.push('/empleados/crear'),
+              tooltip: 'Agregar empleado',
+            ),
+        ],
+      ),
       body: Column(
         children: [
-          _HeaderEmpleados(
-            totalActivos: activos,
-            totalInactivos: inactivos,
-            mostrandoInactivos: _mostrarInactivos,
-            onBack: () {
-              if (_mostrarInactivos) {
-                setState(() => _mostrarInactivos = false);
-              } else {
-                Navigator.of(context).maybePop();
-              }
-            },
-            onToggleFilter: rolActual != 'empleado'
-                ? () => setState(() => _mostrarInactivos = !_mostrarInactivos)
-                : null,
-            onAdd: rolActual != 'empleado'
-                ? () => context.push('/empleados/crear')
-                : null,
-          ),
           Expanded(
             child: usuariosState.isLoading
                 ? Center(child: CircularProgressIndicator(color: AppColors.primary))

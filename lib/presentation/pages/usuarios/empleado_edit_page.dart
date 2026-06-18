@@ -57,7 +57,7 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Editar Empleado'),
-        backgroundColor: colorScheme.primary,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -115,7 +115,7 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
         prefixIcon: Icon(icon),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
+        fillColor: Colors.grey.shade100,
       ),
     );
   }

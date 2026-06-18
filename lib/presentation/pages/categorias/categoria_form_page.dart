@@ -115,7 +115,7 @@ class _CategoriaFormPageState extends ConsumerState<CategoriaFormPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Editar Categoría' : 'Nueva Categoría'),
-        backgroundColor: colorScheme.primary,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -134,7 +134,7 @@ class _CategoriaFormPageState extends ConsumerState<CategoriaFormPage> {
                 prefixIcon: const Icon(Icons.category),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
+                fillColor: Colors.grey.shade100,
               ),
               textCapitalization: TextCapitalization.words,
             ),
@@ -146,7 +146,7 @@ class _CategoriaFormPageState extends ConsumerState<CategoriaFormPage> {
                 prefixIcon: const Icon(Icons.description),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
+                fillColor: Colors.grey.shade100,
               ),
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,

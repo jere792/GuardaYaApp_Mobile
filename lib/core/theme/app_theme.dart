@@ -42,7 +42,7 @@ class AppTheme {
         elevation: 0,
         backgroundColor: appbarColor,
         foregroundColor: colorScheme.onSurface,
-        iconTheme: IconThemeData(color: colorScheme.primary),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
         elevation: isDark ? 4 : 2,
@@ -74,7 +74,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
+        fillColor: Colors.grey.shade100,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: colorScheme.outline),

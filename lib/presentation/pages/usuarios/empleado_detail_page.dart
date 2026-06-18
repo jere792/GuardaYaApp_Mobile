@@ -42,39 +42,34 @@ class EmpleadoDetailPage extends ConsumerWidget {
     final isActive = empleado.activo;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detalle del Empleado'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        actions: [
+          if (rolActual != 'empleado')
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => context.push('/empleados/editar/$empleadoId'),
+            ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
+            padding: const EdgeInsets.all(24),
+            color: AppColors.primary.withValues(alpha: 0.08),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.of(context).maybePop(),
-                    ),
-                    const Spacer(),
-                    if (rolActual != 'empleado')
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                        onPressed: () => context.push('/empleados/editar/$empleadoId'),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 CircleAvatar(
                   radius: 40,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                  foregroundColor: AppColors.primary,
                   child: Text(
                     (empleado.nombre.isNotEmpty ? empleado.nombre.substring(0, 1) : '?').toUpperCase(),
                     style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
@@ -83,7 +78,7 @@ class EmpleadoDetailPage extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   empleado.nombre,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 4),
                 Text(

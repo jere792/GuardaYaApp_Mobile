@@ -15,67 +15,49 @@ class ClienteDetailPage extends ConsumerWidget {
     final c = state.clientes.where((c) => c.id == clienteId).firstOrNull;
     if (c == null) {
       return Scaffold(
-        body: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                ],
-              ),
-            ),
-            const Expanded(child: Center(child: Text('Cliente no encontrado'))),
-          ],
+        appBar: AppBar(
+          title: const Text('Detalle del Cliente'),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
         ),
+        body: const Center(child: Text('Cliente no encontrado')),
       );
     }
 
     final isActive = c.activo;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detalle del Cliente'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => context.push('/clientes/editar/${c.id}'),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(4, 48, 16, 24),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
+            padding: const EdgeInsets.all(24),
+            color: AppColors.primary.withValues(alpha: 0.08),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                      onPressed: () => context.push('/clientes/editar/${c.id}'),
-                    ),
-                  ],
-                ),
                 CircleAvatar(
                   radius: 36,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                  foregroundColor: AppColors.primary,
                   child: Text(
                     (c.nombre.isNotEmpty ? c.nombre.substring(0, 1) : '?').toUpperCase(),
                     style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
@@ -84,7 +66,7 @@ class ClienteDetailPage extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   c.nombre,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -155,7 +137,7 @@ class _InfoTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 20, color: colorScheme.primary),
+        Icon(icon, size: 20, color: AppColors.primary),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,

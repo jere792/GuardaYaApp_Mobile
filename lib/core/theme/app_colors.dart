@@ -18,7 +18,7 @@ class AppColors {
   static const Color borderLight = Color(0xFFD1D5DB);
   static const Color divider = Color(0xFFDEE2E6);
 
-  // -- Dark mode --
+  // -- Dark mode (login/gradients) --
   static const Color darkBg = Color(0xFF222D20);
   static const Color darkBgGradient1 = Color(0xFF222D20);
   static const Color darkBgGradient2 = Color(0xFF1E2832);

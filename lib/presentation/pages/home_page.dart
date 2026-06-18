@@ -24,7 +24,6 @@ class HomePage extends ConsumerWidget {
     });
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF000000) : AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,

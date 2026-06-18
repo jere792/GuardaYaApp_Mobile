@@ -300,86 +300,95 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
             onChanged: (_) => setState(() => _currentPage = 0),
           ),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: _rolFilter.isEmpty ? null : _rolFilter,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: _rolFilter.isNotEmpty ? FontWeight.w600 : FontWeight.w400,
-              color: _rolFilter.isNotEmpty ? AppColors.primary : colorScheme.onSurface,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Rol',
-              hintStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: colorScheme.outlineVariant),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _rolFilter.isEmpty ? null : _rolFilter,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: _rolFilter.isNotEmpty ? FontWeight.w600 : FontWeight.w400,
+                    color: _rolFilter.isNotEmpty ? AppColors.primary : colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Rol',
+                    hintStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                    filled: true,
+                    fillColor: _rolFilter.isNotEmpty
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : colorScheme.surface,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    isDense: true,
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Todos los roles')),
+                    DropdownMenuItem(value: 'empleado', child: Text('Empleado', style: TextStyle(color: colorScheme.onSurface))),
+                    DropdownMenuItem(value: 'admin', child: Text('Admin', style: TextStyle(color: colorScheme.onSurface))),
+                    DropdownMenuItem(value: 'super_admin', child: Text('Super Admin', style: TextStyle(color: colorScheme.onSurface))),
+                  ],
+                  onChanged: (v) => setState(() { _rolFilter = v ?? ''; _currentPage = 0; }),
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _empresaFilter,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: _empresaFilter != null ? FontWeight.w600 : FontWeight.w400,
+                    color: _empresaFilter != null ? AppColors.primary : colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Empresa',
+                    hintStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                    filled: true,
+                    fillColor: _empresaFilter != null
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : colorScheme.surface,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    isDense: true,
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Todas las empresas')),
+                    ..._empresaMap.entries.map((e) => DropdownMenuItem(
+                      value: e.key,
+                      child: Text(e.value, style: TextStyle(color: colorScheme.onSurface)),
+                    )),
+                  ],
+                  onChanged: (v) => setState(() { _empresaFilter = v; _currentPage = 0; }),
+                ),
               ),
-              filled: true,
-              fillColor: _rolFilter.isNotEmpty
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : colorScheme.surface,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              isDense: true,
-            ),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Todos los roles')),
-              DropdownMenuItem(value: 'empleado', child: Text('Empleado', style: TextStyle(color: colorScheme.onSurface))),
-              DropdownMenuItem(value: 'admin', child: Text('Admin', style: TextStyle(color: colorScheme.onSurface))),
-              DropdownMenuItem(value: 'super_admin', child: Text('Super Admin', style: TextStyle(color: colorScheme.onSurface))),
             ],
-            onChanged: (v) => setState(() { _rolFilter = v ?? ''; _currentPage = 0; }),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: _empresaFilter,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: _empresaFilter != null ? FontWeight.w600 : FontWeight.w400,
-              color: _empresaFilter != null ? AppColors.primary : colorScheme.onSurface,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Empresa',
-              hintStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-              filled: true,
-              fillColor: _empresaFilter != null
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : colorScheme.surface,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              isDense: true,
-            ),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Todas las empresas')),
-              ..._empresaMap.entries.map((e) => DropdownMenuItem(
-                value: e.key,
-                child: Text(e.value, style: TextStyle(color: colorScheme.onSurface)),
-              )),
-            ],
-            onChanged: (v) => setState(() { _empresaFilter = v; _currentPage = 0; }),
           ),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
-            height: 40,
+            height: 44,
             child: OutlinedButton(
               onPressed: _limpiarFiltros,
               style: OutlinedButton.styleFrom(
                 foregroundColor: colorScheme.onSurfaceVariant,
                 side: BorderSide(color: colorScheme.outlineVariant),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: EdgeInsets.zero,
               ),
               child: const Text('Limpiar'),
             ),
@@ -457,7 +466,7 @@ class _FilterField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      height: 40,
+      height: 44,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(10),

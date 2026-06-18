@@ -144,11 +144,15 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
         ),
         const SizedBox(height: 12),
 
+        // Productos
+        if (venta.productos != null && venta.productos.toString().isNotEmpty)
+          _buildProductosSection(venta.productos!),
+        const SizedBox(height: 12),
+
         // Información de registro
         _detailCard(
           children: [
             _detailRow(Icons.access_time, 'Registrado', DateFormat('dd/MM/yyyy HH:mm').format(venta.createdAt)),
-            _detailRow(Icons.tag, 'ID', venta.id.substring(0, 8) + '...'),
             if (venta.descripcion != null && venta.descripcion!.isNotEmpty)
               _detailRow(Icons.notes, 'Notas', venta.descripcion!),
           ],
@@ -193,6 +197,55 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
               ],
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildProductosSection(dynamic productosData) {
+    List<Map<String, dynamic>> productos = [];
+    if (productosData is String && productosData.isNotEmpty) {
+      try {
+        final decoded = Uri.tryParse('[${productosData.replaceAll('{', '{"').replaceAll('}', '"}')}]');
+      } catch (_) {}
+      // Simple manual parse for our format: [{nombre: X, cantidad: Y, precio: Z, subtotal: W}]
+      try {
+        final RegExp exp = RegExp(r"\{([^}]+)\}");
+        final matches = exp.allMatches(productosData);
+        for (final m in matches) {
+          final parts = m.group(1)!.split(',');
+          Map<String, dynamic> map = {};
+          for (final p in parts) {
+            final kv = p.split(': ');
+            if (kv.length == 2) {
+              map[kv[0].trim()] = kv[1].trim();
+            }
+          }
+          if (map.isNotEmpty) productos.add(map);
+        }
+      } catch (_) {}
+    } else if (productosData is List) {
+      productos = productosData.cast<Map<String, dynamic>>();
+    }
+    if (productos.isEmpty) return const SizedBox.shrink();
+    return _detailCard(
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: Text('Productos', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        ),
+        ...productos.map((p) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text('${p['nombre'] ?? ''} x${p['cantidad'] ?? 1}',
+                    style: const TextStyle(fontSize: 13)),
+              ),
+              Text('S/ ${(p['subtotal'] ?? 0).toString()}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+            ],
+          ),
+        )),
       ],
     );
   }

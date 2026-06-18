@@ -71,7 +71,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
     final todos = usuariosState.usuarios;
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
     final empleados = todos.where((e) => e.activo == !_mostrarInactivos).toList();
-    final totalPages = (empleados.length / _pageSize).ceil().clamp(1, empleados.length);
+    final totalPages = empleados.isEmpty ? 1 : (empleados.length / _pageSize).ceil();
     final pagedEmpleados = empleados.skip(_currentPage * _pageSize).take(_pageSize).toList();
     final activos = todos.where((e) => e.activo).length;
     final inactivos = todos.length - activos;

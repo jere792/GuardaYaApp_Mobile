@@ -11,6 +11,7 @@ class Venta extends Equatable {
   final String? clienteTelefono;
   final DateTime? fechaYape;
   final String? descripcion;
+  final String? productos;
   final String estado;
   final String? imagenYapeUrl;
   final String? imagenEntregaUrl;
@@ -28,6 +29,7 @@ class Venta extends Equatable {
     this.clienteTelefono,
     this.fechaYape,
     this.descripcion,
+    this.productos,
     required this.estado,
     this.imagenYapeUrl,
     this.imagenEntregaUrl,
@@ -38,7 +40,7 @@ class Venta extends Equatable {
   @override
   List<Object?> get props => [
     id, empresaId, usuarioId, clienteId, codigoYape, monto,
-    clienteNombre, clienteTelefono, fechaYape, descripcion, estado,
+    clienteNombre, clienteTelefono, fechaYape, descripcion, productos, estado,
     imagenYapeUrl, imagenEntregaUrl, createdAt, updatedAt,
   ];
 }

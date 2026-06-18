@@ -54,7 +54,7 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
       ).toList();
     }
     filtered.sort((a, b) => a.activo == b.activo ? 0 : (a.activo ? -1 : 1));
-    final totalPages = (filtered.length / _pageSize).ceil().clamp(1, filtered.length);
+    final totalPages = filtered.isEmpty ? 1 : (filtered.length / _pageSize).ceil();
     final pagedItems = filtered.skip(_currentPage * _pageSize).take(_pageSize).toList();
 
     return Scaffold(

@@ -11,6 +11,7 @@ class VentaModel {
   final String? clienteTelefono;
   final DateTime? fechaYape;
   final String? descripcion;
+  final String? productos;
   final String estado;
   final String? imagenYapeUrl;
   final String? imagenEntregaUrl;
@@ -28,6 +29,7 @@ class VentaModel {
     this.clienteTelefono,
     this.fechaYape,
     this.descripcion,
+    this.productos,
     required this.estado,
     this.imagenYapeUrl,
     this.imagenEntregaUrl,
@@ -47,6 +49,7 @@ class VentaModel {
       clienteTelefono: json['cliente_telefono'],
       fechaYape: json['fecha_yape'] != null ? DateTime.parse(json['fecha_yape']) : null,
       descripcion: json['descripcion'],
+      productos: json['productos'],
       estado: json['estado'] ?? 'pendiente',
       imagenYapeUrl: json['imagen_yape_url'],
       imagenEntregaUrl: json['imagen_entrega_url'],
@@ -67,6 +70,7 @@ class VentaModel {
       'cliente_telefono': clienteTelefono,
       'fecha_yape': fechaYape?.toIso8601String(),
       'descripcion': descripcion,
+      'productos': productos,
       'estado': estado,
       'imagen_yape_url': imagenYapeUrl,
       'imagen_entrega_url': imagenEntregaUrl,
@@ -104,6 +108,7 @@ class VentaModel {
     clienteTelefono: entity.clienteTelefono,
     fechaYape: entity.fechaYape,
     descripcion: entity.descripcion,
+    productos: entity.productos,
     estado: entity.estado,
     imagenYapeUrl: entity.imagenYapeUrl,
     imagenEntregaUrl: entity.imagenEntregaUrl,

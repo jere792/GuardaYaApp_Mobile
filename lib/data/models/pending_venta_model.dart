@@ -11,6 +11,7 @@ class PendingVentaModel {
   final String? clienteTelefono;
   final String? fechaYape;
   final String? descripcion;
+  final String? productos;
   final String estado;
   final String? imagenYapeLocalPath;
   final String? imagenEntregaLocalPath;
@@ -30,6 +31,7 @@ class PendingVentaModel {
     this.clienteTelefono,
     this.fechaYape,
     this.descripcion,
+    this.productos,
     this.estado = 'pendiente',
     this.imagenYapeLocalPath,
     this.imagenEntregaLocalPath,
@@ -51,6 +53,7 @@ class PendingVentaModel {
       clienteTelefono: map['cliente_telefono'],
       fechaYape: map['fecha_yape'],
       descripcion: map['descripcion'],
+      productos: map['productos'],
       estado: map['estado'] ?? 'pendiente',
       imagenYapeLocalPath: map['imagen_yape_local_path'],
       imagenEntregaLocalPath: map['imagen_entrega_local_path'],
@@ -73,6 +76,7 @@ class PendingVentaModel {
       'cliente_telefono': clienteTelefono,
       'fecha_yape': fechaYape,
       'descripcion': descripcion,
+      'productos': productos,
       'estado': estado,
       'imagen_yape_local_path': imagenYapeLocalPath,
       'imagen_entrega_local_path': imagenEntregaLocalPath,

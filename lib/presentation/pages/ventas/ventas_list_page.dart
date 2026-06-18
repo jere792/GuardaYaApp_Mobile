@@ -272,7 +272,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
       );
     }
 
-    final totalPages = (state.ventas.length / _pageSize).ceil().clamp(1, state.ventas.length);
+    final totalPages = state.ventas.isEmpty ? 1 : (state.ventas.length / _pageSize).ceil();
     final pagedVentas = state.ventas.skip(_currentPage * _pageSize).take(_pageSize).toList();
 
     final list = ListView.builder(

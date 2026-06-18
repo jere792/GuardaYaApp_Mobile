@@ -72,11 +72,14 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   bool _productoSearched = false;
 
   bool _isOffline = false;
+  bool _codigoDuplicado = false;
+  bool _verificandoCodigo = false;
 
   @override
   void initState() {
     super.initState();
     _checkConnectivity();
+    _codigoController.addListener(_onCodigoChanged);
   }
 
   Future<void> _checkConnectivity() async {
@@ -85,8 +88,34 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     setState(() => _isOffline = !online);
   }
 
+  void _onCodigoChanged() {
+    final codigo = _codigoController.text.trim();
+    if (codigo.length >= 4 && !_isOffline) {
+      _verificarCodigoDuplicado(codigo);
+    } else {
+      if (_codigoDuplicado) setState(() => _codigoDuplicado = false);
+    }
+  }
+
+  Future<void> _verificarCodigoDuplicado(String codigo) async {
+    final user = ref.read(authProvider).usuario;
+    final empresaId = user?.empresaId;
+    if (empresaId == null || empresaId.isEmpty) return;
+    setState(() => _verificandoCodigo = true);
+    try {
+      final datasource = VentasDatasource();
+      final existente = await datasource.buscarVentaPorCodigo(empresaId, codigo);
+      if (mounted) setState(() => _codigoDuplicado = existente != null);
+    } catch (_) {
+      if (mounted) setState(() => _codigoDuplicado = false);
+    } finally {
+      if (mounted) setState(() => _verificandoCodigo = false);
+    }
+  }
+
   @override
   void dispose() {
+    _codigoController.removeListener(_onCodigoChanged);
     _codigoController.dispose();
     _montoController.dispose();
     _fechaController.dispose();
@@ -270,10 +299,23 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       return;
     }
 
+    final codigoOp = _codigoController.text.trim();
     final monto = double.tryParse(_montoController.text.replaceAll(',', '.')) ?? 0;
     if (monto <= 0) {
       TopRightToast.show(context, 'El monto debe ser mayor a 0', isError: true);
       return;
+    }
+
+    // Verificar si el código de operación ya existe
+    final datasource = VentasDatasource();
+    if (!_isOffline && usuario.empresaId != null) {
+      try {
+        final existente = await datasource.buscarVentaPorCodigo(usuario.empresaId!, codigoOp);
+        if (existente != null) {
+          TopRightToast.show(context, 'Este código de operación ya fue registrado', isError: true);
+          return;
+        }
+      } catch (_) {}
     }
 
     LoadingOverlay.show(context, message: 'Guardando venta...');
@@ -282,17 +324,28 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       final uuid = const Uuid();
       final ventaId = uuid.v4();
 
+      // Serializar productos a JSON
+      final productosJson = _productos.isNotEmpty
+          ? _productos.map((p) => {
+              'nombre': p.nombre,
+              'cantidad': p.cantidad,
+              'precio': p.precio,
+              'subtotal': p.subtotal,
+            }).toList()
+          : null;
+
       final pendingVenta = PendingVentaModel(
         id: ventaId,
         empresaId: usuario.empresaId ?? '',
         usuarioId: usuario.id,
         clienteId: _clienteSeleccionado?.id,
-        codigoYape: _codigoController.text.trim(),
+        codigoYape: codigoOp,
         monto: monto,
         clienteNombre: _clienteNombreController.text.trim().isNotEmpty ? _clienteNombreController.text.trim() : null,
         clienteTelefono: _clienteTelefonoController.text.trim().isNotEmpty ? _clienteTelefonoController.text.trim() : null,
         fechaYape: _fechaController.text.trim().isNotEmpty ? _fechaController.text.trim() : null,
         descripcion: _descripcionController.text.trim().isNotEmpty ? _descripcionController.text.trim() : null,
+        productos: productosJson != null ? productosJson.toString() : null,
         estado: 'pendiente',
         imagenYapeLocalPath: _comprobanteImage?.path,
         createdAt: DateTime.now().toIso8601String(),
@@ -312,7 +365,11 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
           ventaMap.remove('retry_count');
           ventaMap.remove('imagen_yape_local_path');
           ventaMap.remove('imagen_entrega_local_path');
-          ventaMap.remove('cliente_id');
+
+          // Convertir productos de string a List para Supabase
+          if (productosJson != null) {
+            ventaMap['productos'] = productosJson;
+          }
 
           // Convertir fecha_yape a ISO 8601 para Supabase
           if (ventaMap['fecha_yape'] != null) {
@@ -320,7 +377,6 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             ventaMap['fecha_yape'] = parsed;
           }
 
-          final datasource = VentasDatasource();
           await datasource.registrarVenta(ventaMap);
 
           await dao.updateSyncStatus(ventaId, 'synced');
@@ -541,7 +597,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     }
   }
 
-  Widget _navRow({bool showBack = false, bool showOmit = false, required String nextText, required VoidCallback onNext, VoidCallback? onOmit}) {
+  Widget _navRow({bool showBack = false, bool showOmit = false, required String nextText, VoidCallback? onNext, VoidCallback? onOmit}) {
     final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
@@ -585,7 +641,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             child: ElevatedButton(
               onPressed: onNext,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: onNext != null ? AppColors.primary : Colors.grey,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
@@ -824,6 +880,33 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             icon: Icons.confirmation_number,
             keyboardType: TextInputType.number,
           ),
+          if (_verificandoCodigo)
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+          if (_codigoDuplicado)
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning, color: AppColors.error, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Este código de operación ya fue registrado',
+                      style: TextStyle(fontSize: 12, color: cs.onSurface),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 12),
           _buildTextField(
             controller: _montoController,
@@ -852,7 +935,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             ],
           ),
           const SizedBox(height: 16),
-          _navRow(showBack: true, nextText: 'Continuar', onNext: () => setState(() => _currentStep = 2)),
+          _navRow(showBack: true, nextText: 'Continuar', onNext: _codigoDuplicado ? null : () => setState(() => _currentStep = 2)),
         ],
       ),
     );

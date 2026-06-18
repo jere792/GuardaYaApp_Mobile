@@ -1,4 +1,5 @@
 import 'package:guardaya_app/services/supabase_service.dart';
+import 'package:uuid/uuid.dart';
 
 class VentasDatasource {
   Future<List<Map<String, dynamic>>> obtenerVentasPorFecha(String empresaId, DateTime fecha) async {
@@ -82,6 +83,23 @@ class VentasDatasource {
       operation: 'obtenerVentaPorId',
     );
     return response;
+  }
+
+  Future<void> registrarVentaProductos(String ventaId, String empresaId, List<Map<String, dynamic>> productos) async {
+    if (productos.isEmpty) return;
+    final payload = productos.map((p) => {
+      'id': const Uuid().v4(),
+      'venta_id': ventaId,
+      'empresa_id': empresaId,
+      'nombre': p['nombre'],
+      'cantidad': p['cantidad'],
+      'precio_unitario': p['precio'],
+      'subtotal': p['subtotal'],
+    }).toList();
+    await SupabaseService.withTimeout(
+      SupabaseService.from('venta_productos').insert(payload),
+      operation: 'registrarVentaProductos',
+    );
   }
 
   Future<void> cambiarEstadoVenta(String ventaId, String nuevoEstado) async {

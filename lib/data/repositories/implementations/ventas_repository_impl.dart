@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:fpdart/fpdart.dart';
 import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/core/errors/failures.dart';
@@ -22,6 +23,15 @@ class VentasRepositoryImpl implements VentasRepository {
       if (await _connectivity.isOnline) {
         final model = VentaModel.fromEntity(venta);
         final data = await _remote.registrarVenta(model.toJson());
+
+        if (venta.productos != null && venta.productos!.isNotEmpty) {
+          try {
+            final productosList = jsonDecode(venta.productos!) as List<dynamic>;
+            final productosMaps = productosList.cast<Map<String, dynamic>>();
+            await _remote.registrarVentaProductos(data['id'], venta.empresaId, productosMaps);
+          } catch (_) {}
+        }
+
         return Right(VentaModel.fromJson(data).toEntity());
       } else {
         final pending = PendingVentaModel(
@@ -35,6 +45,7 @@ class VentasRepositoryImpl implements VentasRepository {
           clienteTelefono: venta.clienteTelefono,
           fechaYape: venta.fechaYape?.toIso8601String(),
           descripcion: venta.descripcion,
+          productos: venta.productos,
           estado: venta.estado,
           createdAt: venta.createdAt.toIso8601String(),
         );
@@ -160,7 +171,16 @@ class VentasRepositoryImpl implements VentasRepository {
             estado: p.estado,
             createdAt: DateTime.tryParse(p.createdAt) ?? DateTime.now(),
           );
-          await _remote.registrarVenta(model.toJson());
+          final data = await _remote.registrarVenta(model.toJson());
+
+          if (p.productos != null && p.productos!.isNotEmpty) {
+            try {
+              final productosList = jsonDecode(p.productos!) as List<dynamic>;
+              final productosMaps = productosList.cast<Map<String, dynamic>>();
+              await _remote.registrarVentaProductos(data['id'], p.empresaId, productosMaps);
+            } catch (_) {}
+          }
+
           await _local.deletePendingVenta(p.id);
         } catch (e) {
           await _local.updateSyncStatus(p.id, 'error', error: e.toString(), retryCount: p.retryCount + 1);

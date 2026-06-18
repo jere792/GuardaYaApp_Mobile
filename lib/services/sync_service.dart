@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -64,6 +65,8 @@ void callbackDispatcher() {
       for (final venta in pending) {
         try {
           final ventaMap = Map<String, dynamic>.from(venta);
+          // Guardar productos antes de limpiar
+          final productosRaw = venta['productos'] as String?;
           // Limpiar campos internos antes de enviar
           ventaMap.remove('sync_status');
           ventaMap.remove('sync_error');
@@ -71,6 +74,7 @@ void callbackDispatcher() {
           ventaMap.remove('imagen_yape_local_path');
           ventaMap.remove('imagen_entrega_local_path');
           ventaMap.remove('cliente_id');
+          ventaMap.remove('productos');
           // Convertir fecha_yape a ISO 8601
           if (ventaMap['fecha_yape'] != null && ventaMap['fecha_yape'] is String) {
             final parsed = _parseFechaToIso(ventaMap['fecha_yape'] as String);
@@ -79,6 +83,22 @@ void callbackDispatcher() {
           ventaMap['created_at'] = ventaMap['created_at'] ?? DateTime.now().toIso8601String();
 
           await supabase.from('ventas').insert(ventaMap);
+
+          // Insertar productos en venta_productos
+          if (productosRaw != null && productosRaw.isNotEmpty) {
+            try {
+              final productosList = jsonDecode(productosRaw) as List<dynamic>;
+              final payload = productosList.map((p) => {
+                'venta_id': ventaMap['id'],
+                'empresa_id': ventaMap['empresa_id'],
+                'nombre': p['nombre'],
+                'cantidad': p['cantidad'],
+                'precio_unitario': p['precio'],
+                'subtotal': p['subtotal'],
+              }).toList();
+              await supabase.from('venta_productos').insert(payload);
+            } catch (_) {}
+          }
 
           await db.update(
             'pending_ventas',

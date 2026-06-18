@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -344,7 +345,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         clienteTelefono: _clienteTelefonoController.text.trim().isNotEmpty ? _clienteTelefonoController.text.trim() : null,
         fechaYape: _fechaController.text.trim().isNotEmpty ? _fechaController.text.trim() : null,
         descripcion: _descripcionController.text.trim().isNotEmpty ? _descripcionController.text.trim() : null,
-        productos: productosJson != null ? productosJson.toString() : null,
+        productos: productosJson != null ? jsonEncode(productosJson) : null,
         estado: 'pendiente',
         imagenYapeLocalPath: _comprobanteImage?.path,
         createdAt: DateTime.now().toIso8601String(),
@@ -364,11 +365,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
           ventaMap.remove('retry_count');
           ventaMap.remove('imagen_yape_local_path');
           ventaMap.remove('imagen_entrega_local_path');
-
-          // Convertir productos de string a List para Supabase
-          if (productosJson != null) {
-            ventaMap['productos'] = productosJson;
-          }
+          ventaMap.remove('productos');
 
           // Convertir fecha_yape a ISO 8601 para Supabase
           if (ventaMap['fecha_yape'] != null) {
@@ -376,7 +373,15 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             ventaMap['fecha_yape'] = parsed;
           }
 
-          await datasource.registrarVenta(ventaMap);
+          final ventaCreada = await datasource.registrarVenta(ventaMap);
+
+          if (productosJson != null && productosJson.isNotEmpty) {
+            await datasource.registrarVentaProductos(
+              ventaCreada['id'],
+              usuario.empresaId ?? '',
+              productosJson,
+            );
+          }
 
           await dao.updateSyncStatus(ventaId, 'synced');
           synced = true;
@@ -465,6 +470,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registrar Venta'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

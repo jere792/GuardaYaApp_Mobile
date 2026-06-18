@@ -70,7 +70,6 @@ class VentaModel {
       'cliente_telefono': clienteTelefono,
       'fecha_yape': fechaYape?.toIso8601String(),
       'descripcion': descripcion,
-      'productos': productos,
       'estado': estado,
       'imagen_yape_url': imagenYapeUrl,
       'imagen_entrega_url': imagenEntregaUrl,

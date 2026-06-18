@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -40,6 +40,7 @@ class DatabaseHelper {
         cliente_telefono TEXT,
         fecha_yape TEXT,
         descripcion TEXT,
+        productos TEXT,
         estado TEXT DEFAULT 'pendiente',
         imagen_yape_local_path TEXT,
         imagen_entrega_local_path TEXT,
@@ -91,14 +92,9 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Framework para migraciones futuras.
-    // Ejemplo:
-    // if (oldVersion < 2) {
-    //   await db.execute('ALTER TABLE pending_ventas ADD COLUMN updated_at TEXT');
-    // }
-    // if (oldVersion < 3) {
-    //   await db.execute('CREATE TABLE ...');
-    // }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE pending_ventas ADD COLUMN productos TEXT');
+    }
   }
 
   Future<void> close() async {

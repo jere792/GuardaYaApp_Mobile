@@ -16,6 +16,7 @@ class ProductosListPage extends ConsumerStatefulWidget {
 class _ProductosListPageState extends ConsumerState<ProductosListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _mostrarInactivos = false;
 
   @override
   void initState() {
@@ -41,7 +42,7 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(productosProvider);
 
-    var filtered = List<Producto>.from(state.productos);
+    var filtered = state.productos.where((p) => p.activo == !_mostrarInactivos).toList();
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((p) =>
         p.nombre.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -52,18 +53,30 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Productos'),
+        title: Text(_mostrarInactivos ? 'Productos Inactivos' : 'Productos'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            if (_mostrarInactivos) {
+              setState(() => _mostrarInactivos = false);
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push('/productos/crear'),
+            icon: Icon(_mostrarInactivos ? Icons.inventory_2 : Icons.delete_sweep),
+            onPressed: () => setState(() => _mostrarInactivos = !_mostrarInactivos),
+            tooltip: _mostrarInactivos ? 'Ver activos' : 'Ver inactivos',
           ),
+          if (!_mostrarInactivos)
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => context.push('/productos/crear'),
+            ),
         ],
       ),
       body: Column(

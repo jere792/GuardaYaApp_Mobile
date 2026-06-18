@@ -656,12 +656,21 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   // Step 1: Tipo de transferencia
   Widget _buildStep1() {
     final cs = Theme.of(context).colorScheme;
+    final isEfectivo = _tipoTransferencia == 'Efectivo';
+
     const tipoIcons = {
       'Yape': Icons.account_balance,
       'Plin': Icons.account_balance,
       'Transferencia': Icons.swap_horiz,
       'Efectivo': Icons.money,
       'Otro': Icons.more_horiz,
+    };
+    const tipoColors = {
+      'Yape': Color(0xFF00B4D8),
+      'Plin': Color(0xFF6C63FF),
+      'Transferencia': AppColors.primary,
+      'Efectivo': Color(0xFF2A9D8F),
+      'Otro': Colors.grey,
     };
     return _buildCard(
       title: 'Tipo de Transferencia',
@@ -674,30 +683,41 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             runSpacing: 12,
             children: _tiposTransferencia.map((tipo) {
               final isSelected = _tipoTransferencia == tipo;
+              final color = tipoColors[tipo] ?? Colors.grey;
               final icon = tipoIcons[tipo] ?? Icons.payment;
-              return ChoiceChip(
-                avatar: Icon(icon, size: 28, color: isSelected ? Colors.white : AppColors.primary),
-                label: Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Text(tipo, style: const TextStyle(fontSize: 14)),
+              return GestureDetector(
+                onTap: () => setState(() => _tipoTransferencia = tipo),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: isSelected ? color : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? color : color.withValues(alpha: 0.4),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, size: 32, color: isSelected ? Colors.white : color),
+                      const SizedBox(height: 6),
+                      Text(
+                        tipo,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : color,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                selected: isSelected,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() => _tipoTransferencia = tipo);
-                  }
-                },
-                selectedColor: AppColors.primary,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : cs.onSurface,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                backgroundColor: cs.surfaceContainerHighest,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               );
             }).toList(),
           ),
-          if (_tipoTransferencia == 'Efectivo') ...[
+          if (isEfectivo) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -711,7 +731,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Para efectivo solo necesitas ingresar el monto manualmente.',
+                      'Para efectivo no se requiere foto. Solo ingresa el monto.',
                       style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                     ),
                   ),
@@ -720,7 +740,10 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             ),
           ],
           const SizedBox(height: 16),
-          _navRow(nextText: 'Continuar', onNext: () => setState(() => _currentStep = 1)),
+          _navRow(
+            nextText: 'Continuar',
+            onNext: () => setState(() => _currentStep = isEfectivo ? 2 : 1),
+          ),
         ],
       ),
     );

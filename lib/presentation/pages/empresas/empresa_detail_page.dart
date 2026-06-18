@@ -118,6 +118,12 @@ class EmpresaDetailPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _InfoTile(
+                    icon: Icons.people,
+                    label: 'Límite de usuarios',
+                    value: e.limiteUsuarios > 0 ? e.limiteUsuarios.toString() : 'Sin límite',
+                  ),
+                  const SizedBox(height: 16),
+                  _InfoTile(
                     icon: Icons.calendar_today,
                     label: 'Creada',
                     value: '${e.createdAt.day}/${e.createdAt.month}/${e.createdAt.year}',

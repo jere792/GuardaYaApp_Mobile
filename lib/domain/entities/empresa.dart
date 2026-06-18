@@ -10,6 +10,7 @@ class Empresa extends Equatable {
   final String? rucDni;
   final String? logoUrl;
   final String plan;
+  final int limiteUsuarios;
   final bool activo;
   final DateTime createdAt;
 
@@ -23,6 +24,7 @@ class Empresa extends Equatable {
     this.rucDni,
     this.logoUrl,
     this.plan = 'basico',
+    this.limiteUsuarios = 0,
     required this.activo,
     required this.createdAt,
   });
@@ -37,6 +39,7 @@ class Empresa extends Equatable {
     String? rucDni,
     String? logoUrl,
     String? plan,
+    int? limiteUsuarios,
     bool? activo,
     DateTime? createdAt,
   }) {
@@ -50,6 +53,7 @@ class Empresa extends Equatable {
       rucDni: rucDni ?? this.rucDni,
       logoUrl: logoUrl ?? this.logoUrl,
       plan: plan ?? this.plan,
+      limiteUsuarios: limiteUsuarios ?? this.limiteUsuarios,
       activo: activo ?? this.activo,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -58,6 +62,6 @@ class Empresa extends Equatable {
   @override
   List<Object?> get props => [
     id, nombre, slug, emailContacto, telefono, direccion, rucDni,
-    logoUrl, plan, activo, createdAt,
+    logoUrl, plan, limiteUsuarios, activo, createdAt,
   ];
 }

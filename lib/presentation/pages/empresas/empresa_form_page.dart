@@ -21,6 +21,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
   final _telefonoController = TextEditingController();
   final _direccionController = TextEditingController();
   final _rucDniController = TextEditingController();
+  final _limiteUsuariosController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isEditing = false;
   String _planSeleccionado = 'basico';
@@ -45,6 +46,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
       _direccionController.text = e.direccion ?? '';
       _rucDniController.text = e.rucDni ?? '';
       _planSeleccionado = e.plan;
+      _limiteUsuariosController.text = e.limiteUsuarios > 0 ? e.limiteUsuarios.toString() : '';
     }
   }
 
@@ -56,6 +58,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
     _telefonoController.dispose();
     _direccionController.dispose();
     _rucDniController.dispose();
+    _limiteUsuariosController.dispose();
     super.dispose();
   }
 
@@ -74,6 +77,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
     final direccion = _direccionController.text.trim();
     final rucDni = _rucDniController.text.trim();
     final plan = _planSeleccionado;
+    final limiteUsuarios = int.tryParse(_limiteUsuariosController.text.trim()) ?? 0;
     final now = DateTime.now();
 
     if (_isEditing) {
@@ -90,6 +94,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
           direccion: direccion.isNotEmpty ? direccion : null,
           rucDni: rucDni.isNotEmpty ? rucDni : null,
           plan: plan,
+          limiteUsuarios: limiteUsuarios,
         ),
       );
     } else {
@@ -103,6 +108,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
           direccion: direccion.isNotEmpty ? direccion : null,
           rucDni: rucDni.isNotEmpty ? rucDni : null,
           plan: plan,
+          limiteUsuarios: limiteUsuarios,
           activo: true,
           createdAt: now,
         ),
@@ -218,6 +224,19 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
                 ),
                 textCapitalization: TextCapitalization.sentences,
                 maxLength: 200,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _limiteUsuariosController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Límite de usuarios',
+                  prefixIcon: const Icon(Icons.people),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  counterText: '',
+                  helperText: '0 = sin límite',
+                ),
+                maxLength: 5,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(

@@ -23,6 +23,7 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
   final _searchController = TextEditingController();
   String _rolFilter = '';
   String? _empresaFilter;
+  Map<String, int> _empresaLimiteMap = {};
 
   @override
   void initState() {
@@ -40,12 +41,17 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
   Future<void> _cargarEmpresas() async {
     try {
       final data = await SupabaseService.from('empresas')
-          .select('id, nombre');
+          .select('id, nombre, limite_usuarios');
       final map = <String, String>{};
+      final limiteMap = <String, int>{};
       for (final e in data as List) {
         map[e['id'] as String] = e['nombre'] as String;
+        limiteMap[e['id'] as String] = (e['limite_usuarios'] ?? 0) as int;
       }
-      if (mounted) setState(() => _empresaMap = map);
+      if (mounted) setState(() {
+        _empresaMap = map;
+        _empresaLimiteMap = limiteMap;
+      });
     } catch (_) {}
   }
 
@@ -148,10 +154,12 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
     final sections = <List<Widget>>[];
     for (final key in sortedKeys) {
       final users = grouped[key]!;
+      final limite = key != null ? (_empresaLimiteMap[key] ?? 0) : 0;
       final sectionWidgets = <Widget>[
         _SectionHeader(
           empresaName: _empresaName(key),
           userCount: users.length,
+          limiteUsuarios: limite,
         ),
       ];
       for (int i = 0; i < users.length; i += 2) {
@@ -565,15 +573,22 @@ class _FilterField extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String empresaName;
   final int userCount;
+  final int limiteUsuarios;
 
   const _SectionHeader({
     required this.empresaName,
     required this.userCount,
+    this.limiteUsuarios = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final limiteStr = limiteUsuarios > 0 ? ' / $limiteUsuarios' : '';
+    final color = limiteUsuarios > 0 && userCount > limiteUsuarios
+        ? Colors.red
+        : colorScheme.primary;
+
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 12),
       child: Row(
@@ -593,15 +608,15 @@ class _SectionHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '$userCount usuario${userCount == 1 ? '' : 's'}',
+              '$userCount$limiteStr usuario${userCount == 1 ? '' : 's'}',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: colorScheme.primary,
+                color: color,
               ),
             ),
           ),

@@ -42,10 +42,7 @@ class EmpresasDatasource {
   Future<void> desactivarEmpresa(String id) async {
     try {
       await SupabaseService.withTimeout(
-        SupabaseService.from('empresas').update({
-          'activo': false,
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', id),
+        SupabaseService.from('empresas').update({'activo': false}).eq('id', id),
         operation: 'desactivarEmpresa',
       );
     } catch (e) {
@@ -56,10 +53,7 @@ class EmpresasDatasource {
   Future<void> reactivarEmpresa(String id) async {
     try {
       await SupabaseService.withTimeout(
-        SupabaseService.from('empresas').update({
-          'activo': true,
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', id),
+        SupabaseService.from('empresas').update({'activo': true}).eq('id', id),
         operation: 'reactivarEmpresa',
       );
     } catch (e) {

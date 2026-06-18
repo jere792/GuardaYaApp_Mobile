@@ -10,6 +10,7 @@ class EmpresaModel {
   final String? rucDni;
   final String? logoUrl;
   final String plan;
+  final int limiteUsuarios;
   final bool activo;
   final DateTime createdAt;
 
@@ -23,6 +24,7 @@ class EmpresaModel {
     this.rucDni,
     this.logoUrl,
     this.plan = 'basico',
+    this.limiteUsuarios = 0,
     required this.activo,
     required this.createdAt,
   });
@@ -38,6 +40,7 @@ class EmpresaModel {
       rucDni: json['ruc_dni'],
       logoUrl: json['logo_url'],
       plan: json['plan'] ?? 'basico',
+      limiteUsuarios: json['limite_usuarios'] ?? 0,
       activo: json['activo'] ?? true,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
     );
@@ -53,6 +56,7 @@ class EmpresaModel {
     rucDni: rucDni,
     logoUrl: logoUrl,
     plan: plan,
+    limiteUsuarios: limiteUsuarios,
     activo: activo,
     createdAt: createdAt,
   );

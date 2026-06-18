@@ -38,6 +38,7 @@ class EmpresasRepositoryImpl implements EmpresasRepository {
         'ruc_dni': empresa.rucDni,
         'logo_url': empresa.logoUrl,
         'plan': empresa.plan,
+        'limite_usuarios': empresa.limiteUsuarios,
         'activo': empresa.activo,
         'created_at': empresa.createdAt.toIso8601String(),
       });
@@ -61,7 +62,7 @@ class EmpresasRepositoryImpl implements EmpresasRepository {
         'ruc_dni': empresa.rucDni,
         'logo_url': empresa.logoUrl,
         'plan': empresa.plan,
-        'updated_at': DateTime.now().toIso8601String(),
+        'limite_usuarios': empresa.limiteUsuarios,
       });
       return Right(EmpresaModel.fromJson(data).toEntity());
     } on ServerException catch (e) {

@@ -74,57 +74,61 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   Widget _buildMetricasGrid(DashboardState state) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+    return Column(
       children: [
-        _MetricaCard(
-          icon: Icons.business,
-          iconBgColor: Colors.blue,
-          label: 'Total Empresas',
-          value: state.totalEmpresas.toString(),
+        Row(
+          children: [
+            Expanded(child: _MetricaCard(icon: Icons.business, iconBgColor: Colors.blue, label: 'Total Empresas', value: state.totalEmpresas.toString())),
+            const SizedBox(width: 12),
+            Expanded(child: _MetricaCard(icon: Icons.people, iconBgColor: Colors.green, label: 'Total Usuarios', value: state.totalUsuarios.toString())),
+          ],
         ),
-        _MetricaCard(
-          icon: Icons.people,
-          iconBgColor: Colors.green,
-          label: 'Total Usuarios',
-          value: state.totalUsuarios.toString(),
-        ),
-        _MetricaCard(
-          icon: Icons.check_circle,
-          iconBgColor: AppColors.primary,
-          label: 'Usuarios Activos',
-          value: state.usuariosActivos.toString(),
-        ),
-        _MetricaCard(
-          icon: Icons.calendar_month,
-          iconBgColor: Colors.purple,
-          label: 'Empresas este Mes',
-          value: state.empresasEsteMes.toString(),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _MetricaCard(icon: Icons.check_circle, iconBgColor: AppColors.primary, label: 'Usuarios Activos', value: state.usuariosActivos.toString())),
+            const SizedBox(width: 12),
+            Expanded(child: _MetricaCard(icon: Icons.calendar_month, iconBgColor: Colors.purple, label: 'Empresas este Mes', value: state.empresasEsteMes.toString())),
+          ],
         ),
       ],
     );
   }
 
   Widget _buildUltimasEmpresas(DashboardState state) {
+    if (state.ultimasEmpresas.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Últimas Empresas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.business, color: Colors.blue, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Últimas Empresas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
         const SizedBox(height: 12),
         ...state.ultimasEmpresas.map((e) => Card(
           margin: const EdgeInsets.only(bottom: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+              child: Text(e.nombre.isNotEmpty ? e.nombre[0].toUpperCase() : '?', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            ),
             title: Text(e.nombre, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(e.rucDni ?? e.plan),
-            trailing: TextButton(
+            subtitle: Text('${e.rucDni ?? "—"} • ${e.plan}'),
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_forward_ios, size: 14),
               onPressed: () => context.push('/admin/empresas/${e.id}'),
-              child: const Text('Ver'),
             ),
           ),
         )),
@@ -133,20 +137,39 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   Widget _buildUltimosUsuarios(DashboardState state) {
+    if (state.ultimosUsuarios.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Últimos Usuarios', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.people, color: Colors.green, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Últimos Usuarios', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
         const SizedBox(height: 12),
         ...state.ultimosUsuarios.map((u) => Card(
           margin: const EdgeInsets.only(bottom: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: CircleAvatar(
+              backgroundColor: Colors.green.withValues(alpha: 0.15),
+              child: Text(u.nombre.isNotEmpty ? u.nombre[0].toUpperCase() : '?', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            ),
             title: Text(u.nombre, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text('${u.username} • ${u.rolId}'),
-            trailing: TextButton(
+            subtitle: Text('${u.username} • ${state.rolLabel(u.rolId)}'),
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_forward_ios, size: 14),
               onPressed: () => context.push('/empleados/detalle/${u.id}'),
-              child: const Text('Ver'),
             ),
           ),
         )),
@@ -173,21 +196,26 @@ class _MetricaCard extends StatelessWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: iconBgColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
+              child: Icon(icon, color: Colors.white, size: 16),
             ),
-            const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              ],
+            ),
           ],
         ),
       ),

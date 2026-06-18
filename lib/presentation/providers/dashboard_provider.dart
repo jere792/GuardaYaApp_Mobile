@@ -12,6 +12,7 @@ class DashboardState {
   final int empresasEsteMes;
   final List<Empresa> ultimasEmpresas;
   final List<Usuario> ultimosUsuarios;
+  final Map<String, String> empresaMap;
   final bool isLoading;
   final String? error;
 
@@ -22,6 +23,7 @@ class DashboardState {
     this.empresasEsteMes = 0,
     this.ultimasEmpresas = const [],
     this.ultimosUsuarios = const [],
+    this.empresaMap = const {},
     this.isLoading = false,
     this.error,
   });
@@ -33,6 +35,7 @@ class DashboardState {
     int? empresasEsteMes,
     List<Empresa>? ultimasEmpresas,
     List<Usuario>? ultimosUsuarios,
+    Map<String, String>? empresaMap,
     bool? isLoading,
     String? error,
   }) {
@@ -43,9 +46,22 @@ class DashboardState {
       empresasEsteMes: empresasEsteMes ?? this.empresasEsteMes,
       ultimasEmpresas: ultimasEmpresas ?? this.ultimasEmpresas,
       ultimosUsuarios: ultimosUsuarios ?? this.ultimosUsuarios,
+      empresaMap: empresaMap ?? this.empresaMap,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
+  }
+
+  String rolLabel(String rolId) {
+    final id = rolId.toLowerCase();
+    if (id.contains('super') || id == 'c63abe3d-5de8-442b-b8d8-9738ad9a7be5') return 'Super Admin';
+    if (id.contains('admin') || id == '6801325e-df02-4391-a882-66247e664dcf') return 'Admin';
+    return 'Empleado';
+  }
+
+  String empresaNombre(String? empresaId) {
+    if (empresaId == null) return 'Super Admin';
+    return empresaMap[empresaId] ?? 'Super Admin';
   }
 }
 
@@ -68,6 +84,11 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
       final usuariosList = (usuariosData as List).map((u) =>
           UsuarioModel.fromJson(u as Map<String, dynamic>).toEntity()).toList();
 
+      final empresaMap = <String, String>{};
+      for (final e in empresasList) {
+        empresaMap[e.id] = e.nombre;
+      }
+
       final now = DateTime.now();
       final startOfMonth = DateTime(now.year, now.month, 1);
 
@@ -83,6 +104,7 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
         empresasEsteMes: empresasEsteMes,
         ultimasEmpresas: empresasList.take(5).toList(),
         ultimosUsuarios: usuariosList.take(5).toList(),
+        empresaMap: empresaMap,
         isLoading: false,
       );
     } catch (e) {

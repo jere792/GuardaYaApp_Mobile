@@ -15,6 +15,8 @@ class EmpleadosListPage extends ConsumerStatefulWidget {
 
 class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
   bool _mostrarInactivos = false;
+  int _currentPage = 0;
+  int get _pageSize => 10;
 
   @override
   void initState() {
@@ -23,6 +25,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
   }
 
   void _cargarEmpleados() {
+    setState(() => _currentPage = 0);
     final authState = ref.read(authProvider);
     final usuario = authState.usuario;
     final rol = usuario?.rolId ?? 'empleado';
@@ -68,6 +71,8 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
     final todos = usuariosState.usuarios;
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
     final empleados = todos.where((e) => e.activo == !_mostrarInactivos).toList();
+    final totalPages = (empleados.length / _pageSize).ceil().clamp(1, empleados.length);
+    final pagedEmpleados = empleados.skip(_currentPage * _pageSize).take(_pageSize).toList();
     final activos = todos.where((e) => e.activo).length;
     final inactivos = todos.length - activos;
 
@@ -90,7 +95,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
           if (rolActual != 'empleado')
             IconButton(
               icon: Icon(_mostrarInactivos ? Icons.people : Icons.delete_sweep),
-              onPressed: () => setState(() => _mostrarInactivos = !_mostrarInactivos),
+              onPressed: () => setState(() { _mostrarInactivos = !_mostrarInactivos; _currentPage = 0; }),
               tooltip: _mostrarInactivos ? 'Ver activos' : 'Ver inactivos',
             ),
           if (rolActual != 'empleado' && !_mostrarInactivos)
@@ -133,7 +138,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                               child: GridView.builder(
-                                itemCount: empleados.length,
+                                itemCount: pagedEmpleados.length,
                                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
                                   crossAxisSpacing: 12,
@@ -141,7 +146,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                                   childAspectRatio: 0.73,
                                 ),
                                 itemBuilder: (context, index) {
-                                  final emp = empleados[index];
+                                  final emp = pagedEmpleados[index];
                                   return _EmpleadoCard(
                                     empleado: emp,
                                     rolActual: rolActual,
@@ -155,6 +160,25 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
                             ),
                           ),
           ),
+          if (totalPages > 1)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: _currentPage == 0 ? null : () => setState(() => _currentPage--),
+                  ),
+                  Text('Página ${_currentPage + 1} de $totalPages',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: _currentPage >= totalPages - 1 ? null : () => setState(() => _currentPage++),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

@@ -17,6 +17,8 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   bool _mostrarInactivos = false;
+  int _currentPage = 0;
+  int get _pageSize => 10;
 
   @override
   void initState() {
@@ -31,6 +33,7 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
   }
 
   void _cargar() {
+    _currentPage = 0;
     final usuario = ref.read(authProvider).usuario;
     final empresaId = usuario?.empresaId;
     if (empresaId != null && empresaId.isNotEmpty) {
@@ -51,6 +54,8 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
       ).toList();
     }
     filtered.sort((a, b) => a.activo == b.activo ? 0 : (a.activo ? -1 : 1));
+    final totalPages = (filtered.length / _pageSize).ceil().clamp(1, filtered.length);
+    final pagedItems = filtered.skip(_currentPage * _pageSize).take(_pageSize).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -111,7 +116,10 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-                onChanged: (v) => setState(() => _searchQuery = v),
+                onChanged: (v) => setState(() {
+                  _searchQuery = v;
+                  _currentPage = 0;
+                }),
               ),
             ),
           ),
@@ -158,9 +166,9 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
                             onRefresh: () async => _cargar(),
                             child: ListView.builder(
                               padding: const EdgeInsets.all(16),
-                              itemCount: filtered.length,
+                              itemCount: pagedItems.length,
                               itemBuilder: (context, index) {
-                                final p = filtered[index];
+                                final p = pagedItems[index];
                                 return _ProductoCard(
                                   producto: p,
                                   onTap: () => context.push('/productos/${p.id}'),
@@ -171,6 +179,27 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
                             ),
                           ),
           ),
+          if (totalPages > 1)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: _currentPage == 0 ? null : () => setState(() => _currentPage--),
+                  ),
+                  Text(
+                    'Página ${_currentPage + 1} de $totalPages',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: _currentPage >= totalPages - 1 ? null : () => setState(() => _currentPage++),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

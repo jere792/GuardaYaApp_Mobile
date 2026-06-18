@@ -16,6 +16,8 @@ class CategoriasListPage extends ConsumerStatefulWidget {
 class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  int _currentPage = 0;
+  int get _pageSize => 10;
 
   @override
   void initState() {
@@ -30,6 +32,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
   }
 
   void _cargar() {
+    setState(() => _currentPage = 0);
     final usuario = ref.read(authProvider).usuario;
     final empresaId = usuario?.empresaId;
     if (empresaId != null && empresaId.isNotEmpty) {
@@ -50,6 +53,9 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
       ).toList();
     }
     filtered.sort((a, b) => a.activo == b.activo ? 0 : (a.activo ? -1 : 1));
+
+    final totalPages = filtered.isEmpty ? 1 : (filtered.length / _pageSize).ceil();
+    final pagedItems = filtered.skip(_currentPage * _pageSize).take(_pageSize).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +104,10 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-                onChanged: (v) => setState(() => _searchQuery = v),
+                onChanged: (v) => setState(() {
+                  _searchQuery = v;
+                  _currentPage = 0;
+                }),
               ),
             ),
           ),
@@ -145,9 +154,9 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
                             onRefresh: () async => _cargar(),
                             child: ListView.builder(
                               padding: const EdgeInsets.all(16),
-                              itemCount: filtered.length,
+                              itemCount: pagedItems.length,
                               itemBuilder: (context, index) {
-                                final cat = filtered[index];
+                                final cat = pagedItems[index];
                                 return _CategoriaCard(
                                   categoria: cat,
                                   onTap: () => context.push('/categorias/${cat.id}'),
@@ -158,6 +167,27 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
                             ),
                           ),
           ),
+          if (totalPages > 1)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: _currentPage == 0 ? null : () => setState(() => _currentPage--),
+                  ),
+                  Text(
+                    'Página ${_currentPage + 1} de $totalPages',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: _currentPage >= totalPages - 1 ? null : () => setState(() => _currentPage++),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

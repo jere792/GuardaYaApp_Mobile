@@ -39,6 +39,7 @@ class ConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
@@ -52,17 +53,17 @@ class ConfirmationDialog extends StatelessWidget {
             child: const Icon(Icons.help_outline, color: AppColors.primary, size: 24),
           ),
           const SizedBox(width: 12),
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
         ],
       ),
       content: Text(
         message,
-        style: TextStyle(fontSize: 15, color: Colors.grey.shade700, height: 1.4),
+        style: TextStyle(fontSize: 15, color: cs.onSurface, height: 1.4),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelText, style: const TextStyle(color: Colors.grey)),
+          child: Text(cancelText, style: TextStyle(color: cs.onSurfaceVariant)),
         ),
         Container(
           decoration: BoxDecoration(

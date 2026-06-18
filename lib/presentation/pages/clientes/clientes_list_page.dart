@@ -17,6 +17,8 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   bool _mostrarInactivos = false;
+  int _currentPage = 0;
+  int get _pageSize => 10;
 
   @override
   void initState() {
@@ -31,6 +33,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
   }
 
   void _cargar() {
+    _currentPage = 0;
     final usuario = ref.read(authProvider).usuario;
     final empresaId = usuario?.empresaId;
     if (empresaId != null && empresaId.isNotEmpty) {
@@ -52,6 +55,9 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
     }
     filtered.sort((a, b) => a.activo == b.activo ? 0 : (a.activo ? -1 : 1));
 
+    final totalPages = (filtered.length / _pageSize).ceil().clamp(1, filtered.length);
+    final pagedItems = filtered.skip(_currentPage * _pageSize).take(_pageSize).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_mostrarInactivos ? 'Clientes Inactivos' : 'Clientes'),
@@ -70,7 +76,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
         actions: [
           IconButton(
             icon: Icon(_mostrarInactivos ? Icons.people : Icons.delete_sweep),
-            onPressed: () => setState(() => _mostrarInactivos = !_mostrarInactivos),
+            onPressed: () => setState(() { _mostrarInactivos = !_mostrarInactivos; _currentPage = 0; }),
             tooltip: _mostrarInactivos ? 'Ver activos' : 'Ver inactivos',
           ),
           if (!_mostrarInactivos)
@@ -104,14 +110,14 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
                           icon: const Icon(Icons.clear, size: 18),
                           onPressed: () {
                             _searchController.clear();
-                            setState(() => _searchQuery = '');
+                            setState(() { _searchQuery = ''; _currentPage = 0; });
                           },
                         )
                       : null,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-                onChanged: (v) => setState(() => _searchQuery = v),
+                onChanged: (v) => setState(() { _searchQuery = v; _currentPage = 0; }),
               ),
             ),
           ),
@@ -158,9 +164,9 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
                             onRefresh: () async => _cargar(),
                             child: ListView.builder(
                               padding: const EdgeInsets.all(16),
-                              itemCount: filtered.length,
+                              itemCount: pagedItems.length,
                               itemBuilder: (context, index) {
-                                final c = filtered[index];
+                                final c = pagedItems[index];
                                 return _ClienteCard(
                                   cliente: c,
                                   onTap: () => context.push('/clientes/${c.id}'),
@@ -171,6 +177,29 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
                             ),
                           ),
           ),
+          if (totalPages > 1)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: _currentPage == 0 ? null : () => setState(() => _currentPage--),
+                  ),
+                  Text('Página ${_currentPage + 1} de $totalPages',
+                      style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: _currentPage >= totalPages - 1 ? null : () => setState(() => _currentPage++),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

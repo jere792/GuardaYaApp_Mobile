@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:guardaya_app/core/constants/api_constants.dart';
 
 class SupabaseService {
-  static const Duration _defaultTimeout = Duration(seconds: 15);
+  static const Duration _defaultTimeout = Duration(seconds: 30);
   static final SupabaseClient client = Supabase.instance.client;
 
   static Future<void> initialize() async {

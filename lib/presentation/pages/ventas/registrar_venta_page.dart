@@ -13,6 +13,10 @@ import 'package:guardaya_app/services/ocr_service.dart';
 import 'package:guardaya_app/data/datasources/local/db/pending_ventas_dao.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:guardaya_app/domain/entities/cliente.dart';
+import 'package:guardaya_app/presentation/providers/clientes_provider.dart';
+import 'package:guardaya_app/domain/entities/producto.dart';
+import 'package:guardaya_app/presentation/providers/productos_provider.dart';
 
 class ProductoVenta {
   String nombre;
@@ -57,6 +61,16 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   final _productoNombreController = TextEditingController();
   final _productoPrecioController = TextEditingController();
 
+  final _clienteSearchController = TextEditingController();
+  List<Cliente> _clientesSearchResults = [];
+  Cliente? _clienteSeleccionado;
+  bool _clienteSearched = false;
+
+  final _productoSearchController = TextEditingController();
+  List<Producto> _productosSearchResults = [];
+  Producto? _productoSeleccionado;
+  bool _productoSearched = false;
+
   bool _isOffline = false;
 
   @override
@@ -82,6 +96,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     _descripcionController.dispose();
     _productoNombreController.dispose();
     _productoPrecioController.dispose();
+    _clienteSearchController.dispose();
+    _productoSearchController.dispose();
     super.dispose();
   }
 
@@ -171,6 +187,75 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     setState(() => _productos.removeAt(index));
   }
 
+  void _buscarClientes(String query) {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _clientesSearchResults = [];
+        _clienteSeleccionado = null;
+        _clienteSearched = false;
+      });
+      return;
+    }
+    final usuario = ref.read(authProvider).usuario;
+    if (usuario?.empresaId == null) return;
+
+    final clientes = ref.read(clientesProvider).clientes;
+    final filtered = clientes.where((c) =>
+      c.activo &&
+      c.empresaId == usuario!.empresaId &&
+      (c.nombre.toLowerCase().contains(query.toLowerCase()) ||
+       (c.telefono?.contains(query) ?? false))
+    ).take(5).toList();
+
+    setState(() {
+      _clientesSearchResults = filtered;
+      _clienteSearched = true;
+    });
+  }
+
+  void _cargarClientesSiEsNecesario() {
+    if (ref.read(clientesProvider).clientes.isEmpty) {
+      final usuario = ref.read(authProvider).usuario;
+      if (usuario?.empresaId != null) {
+        ref.read(clientesProvider.notifier).cargarClientes(usuario!.empresaId!);
+      }
+    }
+  }
+
+  void _buscarProductos(String query) {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _productosSearchResults = [];
+        _productoSeleccionado = null;
+        _productoSearched = false;
+      });
+      return;
+    }
+    final usuario = ref.read(authProvider).usuario;
+    if (usuario?.empresaId == null) return;
+
+    final productos = ref.read(productosProvider).productos;
+    final filtered = productos.where((p) =>
+      p.activo &&
+      p.empresaId == usuario!.empresaId &&
+      p.nombre.toLowerCase().contains(query.toLowerCase())
+    ).take(5).toList();
+
+    setState(() {
+      _productosSearchResults = filtered;
+      _productoSearched = true;
+    });
+  }
+
+  void _cargarProductosSiEsNecesario() {
+    if (ref.read(productosProvider).productos.isEmpty) {
+      final usuario = ref.read(authProvider).usuario;
+      if (usuario?.empresaId != null) {
+        ref.read(productosProvider.notifier).cargarProductos(usuario!.empresaId!);
+      }
+    }
+  }
+
   Future<void> _guardarVenta() async {
     final authState = ref.read(authProvider);
     final usuario = authState.usuario;
@@ -201,6 +286,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         id: ventaId,
         empresaId: usuario.empresaId ?? '',
         usuarioId: usuario.id,
+        clienteId: _clienteSeleccionado?.id,
         codigoYape: _codigoController.text.trim(),
         monto: monto,
         clienteNombre: _clienteNombreController.text.trim().isNotEmpty ? _clienteNombreController.text.trim() : null,
@@ -308,13 +394,20 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       _clienteTelefonoController.clear();
       _descripcionController.clear();
       _productos.clear();
+      _clienteSearchController.clear();
+      _clientesSearchResults = [];
+      _clienteSeleccionado = null;
+      _clienteSearched = false;
+      _productoSearchController.clear();
+      _productosSearchResults = [];
+      _productoSeleccionado = null;
+      _productoSearched = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('Registrar Venta'),
         elevation: 0,
@@ -369,6 +462,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   }
 
   Widget _buildStepCircle(int step, IconData icon, String label) {
+    final cs = Theme.of(context).colorScheme;
     final isActive = step <= _currentStep;
     final isCurrent = step == _currentStep;
 
@@ -386,7 +480,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isActive ? AppColors.primary : Colors.grey.shade300,
+                color: isActive ? AppColors.primary : cs.surfaceContainerHighest,
                 border: isCurrent ? Border.all(color: Colors.white, width: 3) : null,
                 boxShadow: isActive
                     ? [
@@ -401,7 +495,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               child: Icon(
                 icon,
                 size: 18,
-                color: isActive ? Colors.white : Colors.grey.shade600,
+                color: isActive ? Colors.white : cs.onSurfaceVariant,
               ),
             ),
           ),
@@ -411,7 +505,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             style: TextStyle(
               fontSize: 10,
               fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-              color: isActive ? AppColors.textPrimary : Colors.grey.shade500,
+              color: isActive ? cs.onSurface : cs.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
@@ -422,11 +516,12 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   }
 
   Widget _buildStepLine(int step) {
+    final cs = Theme.of(context).colorScheme;
     final isActive = step < _currentStep;
     return Container(
       width: 20,
       height: 2,
-      color: isActive ? AppColors.primary : Colors.grey.shade300,
+      color: isActive ? AppColors.primary : cs.surfaceContainerHighest,
       margin: const EdgeInsets.only(bottom: 20),
     );
   }
@@ -435,14 +530,19 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     switch (_currentStep) {
       case 0: return _buildStep1();
       case 1: return _buildStep2();
-      case 2: return _buildStep3();
-      case 3: return _buildStep4();
+      case 2:
+        WidgetsBinding.instance.addPostFrameCallback((_) => _cargarClientesSiEsNecesario());
+        return _buildStep3();
+      case 3:
+        WidgetsBinding.instance.addPostFrameCallback((_) => _cargarProductosSiEsNecesario());
+        return _buildStep4();
       case 4: return _buildStep5();
       default: return _buildStep1();
     }
   }
 
   Widget _navRow({bool showBack = false, bool showOmit = false, required String nextText, required VoidCallback onNext, VoidCallback? onOmit}) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
         if (showBack)
@@ -470,8 +570,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                 onPressed: onOmit ?? () => setState(() => _currentStep++),
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  side: BorderSide(color: Colors.grey.shade400),
-                  foregroundColor: Colors.grey.shade700,
+                  side: BorderSide(color: cs.outlineVariant),
+                  foregroundColor: cs.onSurfaceVariant,
                 ),
                 child: const Text('Omitir', style: TextStyle(fontSize: 15)),
               ),
@@ -499,6 +599,14 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
 
   // Step 1: Tipo de transferencia
   Widget _buildStep1() {
+    final cs = Theme.of(context).colorScheme;
+    const tipoIcons = {
+      'Yape': Icons.account_balance,
+      'Plin': Icons.account_balance,
+      'Transferencia': Icons.swap_horiz,
+      'Efectivo': Icons.money,
+      'Otro': Icons.more_horiz,
+    };
     return _buildCard(
       title: 'Tipo de Transferencia',
       icon: Icons.payment,
@@ -506,12 +614,17 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 12,
+            runSpacing: 12,
             children: _tiposTransferencia.map((tipo) {
               final isSelected = _tipoTransferencia == tipo;
+              final icon = tipoIcons[tipo] ?? Icons.payment;
               return ChoiceChip(
-                label: Text(tipo),
+                avatar: Icon(icon, size: 28, color: isSelected ? Colors.white : AppColors.primary),
+                label: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(tipo, style: const TextStyle(fontSize: 14)),
+                ),
                 selected: isSelected,
                 onSelected: (selected) {
                   if (selected) {
@@ -520,10 +633,11 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                 },
                 selectedColor: AppColors.primary,
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  color: isSelected ? Colors.white : cs.onSurface,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
-                backgroundColor: Colors.grey.shade100,
+                backgroundColor: cs.surfaceContainerHighest,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               );
             }).toList(),
           ),
@@ -535,14 +649,14 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                 color: AppColors.warning.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: AppColors.warning, size: 18),
-                  SizedBox(width: 8),
+                  const Icon(Icons.info_outline, color: AppColors.warning, size: 18),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Para efectivo solo necesitas ingresar el monto manualmente.',
-                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                     ),
                   ),
                 ],
@@ -558,6 +672,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
 
   // Step 2: Foto y datos extraídos
   Widget _buildStep2() {
+    final cs = Theme.of(context).colorScheme;
     return _buildCard(
       title: 'Foto y Datos Extraídos',
       icon: Icons.camera_alt,
@@ -568,18 +683,18 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             Container(
               height: 200,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade300, width: 2),
+                border: Border.all(color: cs.outlineVariant, width: 2),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.camera_alt_outlined, size: 64, color: Colors.grey.shade400),
+                  Icon(Icons.camera_alt_outlined, size: 64, color: cs.onSurfaceVariant),
                   const SizedBox(height: 12),
                   Text(
                     'Toma una foto del comprobante',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -600,7 +715,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                         icon: const Icon(Icons.photo_library),
                         label: const Text('Galería'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade700,
+                          backgroundColor: cs.surfaceContainerHighest,
                           foregroundColor: Colors.white,
                         ),
                       ),
@@ -669,24 +784,28 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _ocrConfidence >= 0.7 ? Colors.green.shade50 : Colors.orange.shade50,
+                  color: _ocrConfidence >= 0.7
+                      ? Colors.green.withOpacity(0.15)
+                      : Colors.orange.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: _ocrConfidence >= 0.7 ? Colors.green.shade300 : Colors.orange.shade300,
+                    color: _ocrConfidence >= 0.7
+                        ? Colors.green.withOpacity(0.3)
+                        : Colors.orange.withOpacity(0.3),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       _ocrConfidence >= 0.7 ? Icons.check_circle : Icons.warning,
-                      color: _ocrConfidence >= 0.7 ? Colors.green.shade700 : Colors.orange.shade700,
+                      color: _ocrConfidence >= 0.7 ? Colors.green : Colors.orange,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'OCR: ${(_ocrConfidence * 100).toStringAsFixed(0)}% de confianza',
                         style: TextStyle(
-                          color: _ocrConfidence >= 0.7 ? Colors.green.shade700 : Colors.orange.shade700,
+                          color: _ocrConfidence >= 0.7 ? Colors.green : Colors.orange,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -739,8 +858,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     );
   }
 
-  // Step 3: Datos de cliente (opcional)
+  // Step 3: Datos de cliente (opcional) - Search existing or create new
   Widget _buildStep3() {
+    final cs = Theme.of(context).colorScheme;
     return _buildCard(
       title: 'Datos del Cliente',
       icon: Icons.person,
@@ -753,20 +873,98 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               color: AppColors.primary.withOpacity(0.08),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.info_outline, color: AppColors.primary, size: 18),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Campo opcional. Puedes saltar este paso si no tienes los datos del cliente.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    'Busca un cliente existente o ingresa los datos manualmente. Puedes omitir este paso.',
+                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
+          // Search field
+          TextField(
+            controller: _clienteSearchController,
+            decoration: InputDecoration(
+              hintText: 'Buscar cliente por nombre o teléfono...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              suffixIcon: _clienteSearchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _clienteSearchController.clear();
+                        setState(() {
+                          _clientesSearchResults = [];
+                          _clienteNombreController.clear();
+                          _clienteTelefonoController.clear();
+                          _clienteSeleccionado = null;
+                        });
+                      },
+                    )
+                  : null,
+            ),
+            onChanged: (v) => _buscarClientes(v),
+          ),
+          // Search results
+          if (_clientesSearchResults.isNotEmpty)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 180),
+              margin: const EdgeInsets.only(top: 8),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.outlineVariant),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _clientesSearchResults.length,
+                itemBuilder: (context, index) {
+                  final cl = _clientesSearchResults[index];
+                  final isSelected = _clienteSeleccionado?.id == cl.id;
+                  return ListTile(
+                    dense: true,
+                    selected: isSelected,
+                    selectedTileColor: AppColors.primary.withOpacity(0.1),
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary.withOpacity(0.15),
+                      child: Text(
+                        (cl.nombre.isNotEmpty ? cl.nombre[0] : '?').toUpperCase(),
+                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    title: Text(cl.nombre, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                    subtitle: cl.telefono != null ? Text(cl.telefono!, style: const TextStyle(fontSize: 12)) : null,
+                    trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary, size: 20) : null,
+                    onTap: () {
+                      _clienteSeleccionado = cl;
+                      _clienteNombreController.text = cl.nombre;
+                      _clienteTelefonoController.text = cl.telefono ?? '';
+                      _clienteSearchController.text = cl.nombre;
+                      _clientesSearchResults = [];
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            )
+          else if (_clienteSearchController.text.isNotEmpty && !_clienteSearched)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else if (_clienteSearchController.text.isNotEmpty && _clientesSearchResults.isEmpty && _clienteSearched)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('No se encontraron clientes. Ingresa los datos manualmente.',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            ),
+          const SizedBox(height: 12),
           _buildTextField(
             controller: _clienteNombreController,
             label: 'Nombre del cliente',
@@ -792,14 +990,25 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             showOmit: true,
             nextText: 'Continuar',
             onNext: () => setState(() => _currentStep = 3),
+            onOmit: () {
+              setState(() {
+                _clienteSeleccionado = null;
+                _clienteNombreController.clear();
+                _clienteTelefonoController.clear();
+                _clienteSearchController.clear();
+                _clientesSearchResults = [];
+                _currentStep = 3;
+              });
+            },
           ),
         ],
       ),
     );
   }
 
-  // Step 4: Producto (opcional)
+  // Step 4: Producto (opcional) - Search existing or add manually
   Widget _buildStep4() {
+    final cs = Theme.of(context).colorScheme;
     return _buildCard(
       title: 'Productos',
       icon: Icons.shopping_cart,
@@ -812,20 +1021,95 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               color: AppColors.primary.withOpacity(0.08),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.info_outline, color: AppColors.primary, size: 18),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Campo opcional. Puedes saltar este paso si no tienes productos que detallar.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    'Busca un producto existente o ingresa los datos manualmente. Puedes omitir este paso.',
+                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
+          // Search field
+          TextField(
+            controller: _productoSearchController,
+            decoration: InputDecoration(
+              hintText: 'Buscar producto por nombre...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              suffixIcon: _productoSearchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _productoSearchController.clear();
+                        setState(() {
+                          _productosSearchResults = [];
+                          _productoNombreController.clear();
+                          _productoPrecioController.clear();
+                          _productoSeleccionado = null;
+                        });
+                      },
+                    )
+                  : null,
+            ),
+            onChanged: (v) => _buscarProductos(v),
+          ),
+          // Search results
+          if (_productosSearchResults.isNotEmpty)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 180),
+              margin: const EdgeInsets.only(top: 8),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.outlineVariant),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _productosSearchResults.length,
+                itemBuilder: (context, index) {
+                  final p = _productosSearchResults[index];
+                  final isSelected = _productoSeleccionado?.id == p.id;
+                  return ListTile(
+                    dense: true,
+                    selected: isSelected,
+                    selectedTileColor: AppColors.primary.withOpacity(0.1),
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary.withOpacity(0.15),
+                      child: const Icon(Icons.shopping_bag, size: 18, color: AppColors.primary),
+                    ),
+                    title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                    subtitle: Text('S/ ${p.precio.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                    trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary, size: 20) : null,
+                    onTap: () {
+                      _productoSeleccionado = p;
+                      _productoNombreController.text = p.nombre;
+                      _productoPrecioController.text = p.precio.toStringAsFixed(2);
+                      _productoSearchController.text = p.nombre;
+                      _productosSearchResults = [];
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            )
+          else if (_productoSearchController.text.isNotEmpty && !_productoSearched)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else if (_productoSearchController.text.isNotEmpty && _productosSearchResults.isEmpty && _productoSearched)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('No se encontraron productos. Ingresa los datos manualmente.',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -857,13 +1141,13 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: cs.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: cs.outlineVariant),
               ),
               child: Text(
                 'No hay productos agregados. Puedes añadir items o usar solo el monto total.',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -875,9 +1159,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: cs.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: cs.outlineVariant),
                 ),
                 child: Row(
                   children: [
@@ -888,7 +1172,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                           Text(producto.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                           Text(
                             '${producto.cantidad} x S/ ${producto.precio.toStringAsFixed(2)}',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                           ),
                         ],
                       ),
@@ -912,6 +1196,16 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             showOmit: true,
             nextText: 'Revisar y Guardar',
             onNext: () => setState(() => _currentStep = 4),
+            onOmit: () {
+              setState(() {
+                _productoSeleccionado = null;
+                _productoNombreController.clear();
+                _productoPrecioController.clear();
+                _productoSearchController.clear();
+                _productosSearchResults = [];
+                _currentStep = 4;
+              });
+            },
           ),
         ],
       ),
@@ -920,6 +1214,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
 
   // Step 5: Confirmación para guardar
   Widget _buildStep5() {
+    final cs = Theme.of(context).colorScheme;
     return _buildCard(
       title: 'Confirmar Venta',
       icon: Icons.check,
@@ -929,9 +1224,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: cs.surfaceContainerLow,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: cs.outlineVariant),
             ),
             child: Column(
               children: [
@@ -975,19 +1270,13 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   }
 
   Widget _buildCard({required String title, required IconData icon, required Widget child}) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1005,7 +1294,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface),
               ),
             ],
           ),
@@ -1023,21 +1312,22 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider, width: 1),
+        border: Border.all(color: cs.outlineVariant, width: 1),
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+        style: TextStyle(color: cs.onSurface, fontSize: 15),
         decoration: InputDecoration(
           hintText: label,
-          hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6), fontSize: 14),
-          prefixIcon: Icon(icon, color: AppColors.textSecondary.withOpacity(0.7), size: 20),
+          hintStyle: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.6), fontSize: 14),
+          prefixIcon: Icon(icon, color: cs.onSurfaceVariant.withOpacity(0.7), size: 20),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
@@ -1046,18 +1336,19 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   }
 
   Widget _buildSummaryRow(String label, String value, {bool isBold = false, Color? valueColor}) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+          Text(label, style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
           Text(
             value,
             style: TextStyle(
               fontSize: 14,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-              color: valueColor ?? AppColors.textPrimary,
+              color: valueColor ?? cs.onSurface,
             ),
           ),
         ],

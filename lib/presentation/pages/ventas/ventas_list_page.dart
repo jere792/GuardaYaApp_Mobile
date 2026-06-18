@@ -21,6 +21,8 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
   bool _showFilters = false;
+  int _currentPage = 0;
+  int get _pageSize => 10;
 
   @override
   void initState() {
@@ -37,6 +39,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   }
 
   void _cargarVentasDelDia() {
+    setState(() => _currentPage = 0);
     final authState = ref.read(authProvider);
     final usuario = authState.usuario;
     if (usuario?.empresaId != null) {
@@ -60,6 +63,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   }
 
   void _buscar() {
+    setState(() => _currentPage = 0);
     final authState = ref.read(authProvider);
     final usuario = authState.usuario;
     if (usuario?.empresaId == null) return;
@@ -90,6 +94,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
       _telefonoController.clear();
       _fechaInicio = null;
       _fechaFin = null;
+      _currentPage = 0;
     });
     _cargarVentasDelDia();
   }
@@ -267,10 +272,43 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
       );
     }
 
-    return ListView.builder(
+    final totalPages = (state.ventas.length / _pageSize).ceil().clamp(1, state.ventas.length);
+    final pagedVentas = state.ventas.skip(_currentPage * _pageSize).take(_pageSize).toList();
+
+    final list = ListView.builder(
       padding: const EdgeInsets.all(8),
-      itemCount: state.ventas.length,
-      itemBuilder: (context, index) => _VentaCard(venta: state.ventas[index]),
+      itemCount: pagedVentas.length,
+      itemBuilder: (context, index) => _VentaCard(venta: pagedVentas[index]),
+    );
+
+    if (totalPages <= 1) return list;
+
+    return Column(
+      children: [
+        Expanded(child: list),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: _currentPage == 0 ? null : () => setState(() => _currentPage--),
+              ),
+              Text('Página ${_currentPage + 1} de $totalPages',
+                  style: TextStyle(color: colorScheme.onSurfaceVariant)),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: _currentPage >= totalPages - 1 ? null : () => setState(() => _currentPage++),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

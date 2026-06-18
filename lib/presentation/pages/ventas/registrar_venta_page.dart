@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/core/utils/image_picker.dart';
 import 'package:guardaya_app/data/models/pending_venta_model.dart';
@@ -217,10 +218,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   }
 
   void _buscarClientes(String query) {
-    if (query.trim().isEmpty) {
+    if (query.trim().isEmpty || query.trim().length < 3) {
       setState(() {
         _clientesSearchResults = [];
-        _clienteSeleccionado = null;
         _clienteSearched = false;
       });
       return;
@@ -252,10 +252,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   }
 
   void _buscarProductos(String query) {
-    if (query.trim().isEmpty) {
+    if (query.trim().isEmpty || query.trim().length < 3) {
       setState(() {
         _productosSearchResults = [];
-        _productoSeleccionado = null;
         _productoSearched = false;
       });
       return;
@@ -653,6 +652,61 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     );
   }
 
+  List<Widget> _buildTipoGrid(List<String> tipos, Map<String, IconData> icons, Map<String, Color> colors) {
+    final rows = <Widget>[];
+    for (int i = 0; i < tipos.length; i += 3) {
+      final rowTipos = tipos.skip(i).take(3).toList();
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: rowTipos.map((tipo) {
+              final isSelected = _tipoTransferencia == tipo;
+              final color = colors[tipo] ?? Colors.grey;
+              final icon = icons[tipo] ?? Icons.payment;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _tipoTransferencia = tipo),
+                  child: Container(
+                    height: 90,
+                    margin: EdgeInsets.only(
+                      left: rowTipos.indexOf(tipo) > 0 ? 8 : 0,
+                      right: rowTipos.indexOf(tipo) < rowTipos.length - 1 ? 8 : 0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected ? color : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected ? color : color.withValues(alpha: 0.4),
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 28, color: isSelected ? Colors.white : color),
+                        const SizedBox(height: 4),
+                        Text(
+                          tipo,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      );
+    }
+    return rows;
+  }
+
   // Step 1: Tipo de transferencia
   Widget _buildStep1() {
     final cs = Theme.of(context).colorScheme;
@@ -678,45 +732,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: _tiposTransferencia.map((tipo) {
-              final isSelected = _tipoTransferencia == tipo;
-              final color = tipoColors[tipo] ?? Colors.grey;
-              final icon = tipoIcons[tipo] ?? Icons.payment;
-              return GestureDetector(
-                onTap: () => setState(() => _tipoTransferencia = tipo),
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: isSelected ? color : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? color : color.withValues(alpha: 0.4),
-                      width: 2,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(icon, size: 32, color: isSelected ? Colors.white : color),
-                      const SizedBox(height: 6),
-                      Text(
-                        tipo,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+          ..._buildTipoGrid(_tiposTransferencia, tipoIcons, tipoColors),
           if (isEfectivo) ...[
             const SizedBox(height: 12),
             Container(
@@ -731,12 +747,19 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Para efectivo no se requiere foto. Solo ingresa el monto.',
+                      'Para efectivo no se requiere código de operación.',
                       style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                     ),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: _montoController,
+              label: 'Monto (S/) *',
+              icon: Icons.attach_money,
+              keyboardType: TextInputType.number,
             ),
           ],
           const SizedBox(height: 16),
@@ -964,125 +987,153 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     );
   }
 
-  // Step 3: Datos de cliente (opcional) - Search existing or create new
+  // Step 3: Datos de cliente
   Widget _buildStep3() {
     final cs = Theme.of(context).colorScheme;
+    final tieneCliente = _clienteSeleccionado != null;
+
     return _buildCard(
       title: 'Datos del Cliente',
       icon: Icons.person,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
+          if (tieneCliente) ...[
+            Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.primary, size: 18),
+                const Icon(Icons.check_circle, color: Colors.green, size: 18),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Busca un cliente existente o ingresa los datos manualmente. Puedes omitir este paso.',
-                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-                  ),
+                Text('Cliente seleccionado', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green)),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => setState(() {
+                    _clienteSeleccionado = null;
+                    _clienteSearchController.clear();
+                    _clientesSearchResults = [];
+                  }),
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Cambiar'),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          // Search field
-          TextField(
-            controller: _clienteSearchController,
-            decoration: InputDecoration(
-              hintText: 'Buscar cliente por nombre o teléfono...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              suffixIcon: _clienteSearchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        _clienteSearchController.clear();
-                        setState(() {
-                          _clientesSearchResults = [];
-                          _clienteNombreController.clear();
-                          _clienteTelefonoController.clear();
-                          _clienteSeleccionado = null;
-                        });
-                      },
-                    )
-                  : null,
-            ),
-            onChanged: (v) => _buscarClientes(v),
-          ),
-          // Search results
-          if (_clientesSearchResults.isNotEmpty)
+            const SizedBox(height: 8),
             Container(
-              constraints: const BoxConstraints(maxHeight: 180),
-              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: cs.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: cs.outlineVariant),
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _clientesSearchResults.length,
-                itemBuilder: (context, index) {
-                  final cl = _clientesSearchResults[index];
-                  final isSelected = _clienteSeleccionado?.id == cl.id;
-                  return ListTile(
-                    dense: true,
-                    selected: isSelected,
-                    selectedTileColor: AppColors.primary.withOpacity(0.1),
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primary.withOpacity(0.15),
-                      child: Text(
-                        (cl.nombre.isNotEmpty ? cl.nombre[0] : '?').toUpperCase(),
-                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_clienteSeleccionado!.nombre,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  if (_clienteSeleccionado!.telefono != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.phone, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(_clienteSeleccionado!.telefono!,
+                              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        ],
                       ),
                     ),
-                    title: Text(cl.nombre, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-                    subtitle: cl.telefono != null ? Text(cl.telefono!, style: const TextStyle(fontSize: 12)) : null,
-                    trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary, size: 20) : null,
-                    onTap: () {
-                      _clienteSeleccionado = cl;
-                      _clienteNombreController.text = cl.nombre;
-                      _clienteTelefonoController.text = cl.telefono ?? '';
-                      _clienteSearchController.text = cl.nombre;
-                      _clientesSearchResults = [];
-                      setState(() {});
-                    },
-                  );
-                },
+                ],
               ),
-            )
-          else if (_clienteSearchController.text.isNotEmpty && !_clienteSearched)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-            )
-          else if (_clienteSearchController.text.isNotEmpty && _clientesSearchResults.isEmpty && _clienteSearched)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text('No se encontraron clientes. Ingresa los datos manualmente.',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             ),
-          const SizedBox(height: 12),
-          _buildTextField(
-            controller: _clienteNombreController,
-            label: 'Nombre del cliente',
-            icon: Icons.person_outline,
-          ),
-          const SizedBox(height: 12),
-          _buildTextField(
-            controller: _clienteTelefonoController,
-            label: 'Teléfono',
-            icon: Icons.phone,
-            keyboardType: TextInputType.phone,
-          ),
+          ] else ...[
+            // Search field
+            TextField(
+              controller: _clienteSearchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar cliente por nombre o teléfono...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                suffixIcon: _clienteSearchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _clienteSearchController.clear();
+                          setState(() {
+                            _clientesSearchResults = [];
+                            _clienteSeleccionado = null;
+                          });
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (v) => _buscarClientes(v),
+            ),
+            // Search results
+            if (_clientesSearchResults.isNotEmpty)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 180),
+                margin: const EdgeInsets.only(top: 8),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.outlineVariant),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _clientesSearchResults.length,
+                  itemBuilder: (context, index) {
+                    final cl = _clientesSearchResults[index];
+                    return ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                        child: Text(
+                          (cl.nombre.isNotEmpty ? cl.nombre[0] : '?').toUpperCase(),
+                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(cl.nombre, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                      subtitle: cl.telefono != null ? Text(cl.telefono!, style: const TextStyle(fontSize: 12)) : null,
+                      onTap: () {
+                        _clienteSeleccionado = cl;
+                        _clienteSearchController.text = cl.nombre;
+                        _clientesSearchResults = [];
+                        setState(() {});
+                      },
+                    );
+                  },
+                ),
+              )
+            else if (_clienteSearchController.text.length >= 3 && !_clienteSearched)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else if (_clienteSearchController.text.isNotEmpty && _clienteSearchController.text.length < 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('Escribe al menos 3 caracteres para buscar.',
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              )
+            else if (_clienteSearchController.text.isNotEmpty && _clientesSearchResults.isEmpty && _clienteSearched)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text('No se encontraron clientes.',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/clientes/crear'),
+                icon: const Icon(Icons.person_add, size: 18),
+                label: const Text('Crear Cliente (opcional)'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           _buildTextField(
             controller: _descripcionController,
@@ -1099,8 +1150,6 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
             onOmit: () {
               setState(() {
                 _clienteSeleccionado = null;
-                _clienteNombreController.clear();
-                _clienteTelefonoController.clear();
                 _clienteSearchController.clear();
                 _clientesSearchResults = [];
                 _currentStep = 3;
@@ -1112,109 +1161,143 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     );
   }
 
-  // Step 4: Producto (opcional) - Search existing or add manually
+  // Step 4: Producto
   Widget _buildStep4() {
     final cs = Theme.of(context).colorScheme;
+    final tieneProducto = _productoSeleccionado != null;
+
     return _buildCard(
       title: 'Productos',
       icon: Icons.shopping_cart,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
+          if (tieneProducto) ...[
+            Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.primary, size: 18),
+                const Icon(Icons.check_circle, color: Colors.green, size: 18),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Busca un producto existente o ingresa los datos manualmente. Puedes omitir este paso.',
-                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-                  ),
+                Text('Producto seleccionado', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green)),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => setState(() {
+                    _productoSeleccionado = null;
+                    _productoSearchController.clear();
+                    _productosSearchResults = [];
+                  }),
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Cambiar'),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          // Search field
-          TextField(
-            controller: _productoSearchController,
-            decoration: InputDecoration(
-              hintText: 'Buscar producto por nombre...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              suffixIcon: _productoSearchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        _productoSearchController.clear();
-                        setState(() {
-                          _productosSearchResults = [];
-                          _productoNombreController.clear();
-                          _productoPrecioController.clear();
-                          _productoSeleccionado = null;
-                        });
-                      },
-                    )
-                  : null,
-            ),
-            onChanged: (v) => _buscarProductos(v),
-          ),
-          // Search results
-          if (_productosSearchResults.isNotEmpty)
+            const SizedBox(height: 8),
             Container(
-              constraints: const BoxConstraints(maxHeight: 180),
-              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: cs.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: cs.outlineVariant),
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _productosSearchResults.length,
-                itemBuilder: (context, index) {
-                  final p = _productosSearchResults[index];
-                  final isSelected = _productoSeleccionado?.id == p.id;
-                  return ListTile(
-                    dense: true,
-                    selected: isSelected,
-                    selectedTileColor: AppColors.primary.withOpacity(0.1),
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primary.withOpacity(0.15),
-                      child: const Icon(Icons.shopping_bag, size: 18, color: AppColors.primary),
-                    ),
-                    title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-                    subtitle: Text('S/ ${p.precio.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
-                    trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary, size: 20) : null,
-                    onTap: () {
-                      _productoSeleccionado = p;
-                      _productoNombreController.text = p.nombre;
-                      _productoPrecioController.text = p.precio.toStringAsFixed(2);
-                      _productoSearchController.text = p.nombre;
-                      _productosSearchResults = [];
-                      setState(() {});
-                    },
-                  );
-                },
+              child: Row(
+                children: [
+                  const Icon(Icons.shopping_bag, color: AppColors.primary, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(_productoSeleccionado!.nombre,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  ),
+                ],
               ),
-            )
-          else if (_productoSearchController.text.isNotEmpty && !_productoSearched)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-            )
-          else if (_productoSearchController.text.isNotEmpty && _productosSearchResults.isEmpty && _productoSearched)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text('No se encontraron productos. Ingresa los datos manualmente.',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             ),
+          ] else ...[
+            // Search field
+            TextField(
+              controller: _productoSearchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar producto por nombre...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                suffixIcon: _productoSearchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _productoSearchController.clear();
+                          setState(() {
+                            _productosSearchResults = [];
+                            _productoSeleccionado = null;
+                          });
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (v) => _buscarProductos(v),
+            ),
+            // Search results
+            if (_productosSearchResults.isNotEmpty)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 180),
+                margin: const EdgeInsets.only(top: 8),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.outlineVariant),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _productosSearchResults.length,
+                  itemBuilder: (context, index) {
+                    final p = _productosSearchResults[index];
+                    return ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                        child: const Icon(Icons.shopping_bag, size: 18, color: AppColors.primary),
+                      ),
+                      title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                      subtitle: Text('S/ ${p.precio.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                      onTap: () {
+                        _productoSeleccionado = p;
+                        _productoNombreController.text = p.nombre;
+                        _productoPrecioController.text = p.precio.toStringAsFixed(2);
+                        _productoSearchController.text = p.nombre;
+                        _productosSearchResults = [];
+                        setState(() {});
+                      },
+                    );
+                  },
+                ),
+              )
+            else if (_productoSearchController.text.length >= 3 && !_productoSearched)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else if (_productoSearchController.text.isNotEmpty && _productoSearchController.text.length < 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('Escribe al menos 3 caracteres para buscar.',
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              )
+            else if (_productoSearchController.text.isNotEmpty && _productosSearchResults.isEmpty && _productoSearched)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text('No se encontraron productos.',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/productos/crear'),
+                icon: const Icon(Icons.inventory_2, size: 18),
+                label: const Text('Crear Producto (opcional)'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -1224,6 +1307,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                   controller: _productoNombreController,
                   label: 'Producto',
                   icon: Icons.shopping_bag,
+                  readOnly: tieneProducto,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1417,11 +1501,12 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    bool readOnly = false,
   }) {
     final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
+        color: readOnly ? cs.surfaceContainerLow : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outlineVariant, width: 1),
       ),
@@ -1429,7 +1514,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        style: TextStyle(color: cs.onSurface, fontSize: 15),
+        readOnly: readOnly,
+        style: TextStyle(color: readOnly ? cs.onSurfaceVariant : cs.onSurface, fontSize: 15),
         decoration: InputDecoration(
           hintText: label,
           hintStyle: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.6), fontSize: 14),

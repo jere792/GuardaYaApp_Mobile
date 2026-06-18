@@ -20,6 +20,9 @@ import 'package:guardaya_app/presentation/pages/clientes/cliente_detail_page.dar
 import 'package:guardaya_app/presentation/pages/clientes/cliente_form_page.dart';
 import 'package:guardaya_app/presentation/pages/clientes/clientes_list_page.dart';
 import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
+import 'package:guardaya_app/presentation/pages/productos/producto_detail_page.dart';
+import 'package:guardaya_app/presentation/pages/productos/producto_form_page.dart';
+import 'package:guardaya_app/presentation/pages/productos/productos_list_page.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/theme_provider.dart';
 
@@ -46,6 +49,10 @@ const Map<String, List<String>> _routeRoles = {
   '/clientes/crear': ['super_admin', 'admin', 'empleado'],
   '/clientes/:id': ['super_admin', 'admin', 'empleado'],
   '/clientes/editar/:id': ['super_admin', 'admin', 'empleado'],
+  '/productos': ['super_admin', 'admin', 'empleado'],
+  '/productos/crear': ['super_admin', 'admin'],
+  '/productos/:id': ['super_admin', 'admin', 'empleado'],
+  '/productos/editar/:id': ['super_admin', 'admin'],
 };
 
 bool _isRouteAllowed(String route, String? rol) {
@@ -68,6 +75,10 @@ bool _isRouteAllowed(String route, String? rol) {
     normalizedRoute = '/clientes/editar/:id';
   } else if (route.startsWith('/clientes/') && route != '/clientes/crear') {
     normalizedRoute = '/clientes/:id';
+  } else if (route.startsWith('/productos/editar/')) {
+    normalizedRoute = '/productos/editar/:id';
+  } else if (route.startsWith('/productos/') && route != '/productos/crear') {
+    normalizedRoute = '/productos/:id';
   }
   final allowed = _routeRoles[normalizedRoute];
   return allowed != null && allowed.contains(rol);
@@ -144,6 +155,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/clientes/editar/:id',
         builder: (context, state) => ClienteFormPage(clienteId: state.pathParameters['id']!),
+      ),
+      GoRoute(path: '/productos', builder: (context, state) => const ProductosListPage()),
+      GoRoute(
+        path: '/productos/crear',
+        builder: (context, state) => const ProductoFormPage(),
+      ),
+      GoRoute(
+        path: '/productos/:id',
+        builder: (context, state) => ProductoDetailPage(productoId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/productos/editar/:id',
+        builder: (context, state) => ProductoFormPage(productoId: state.pathParameters['id']!),
       ),
       GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),
     ],

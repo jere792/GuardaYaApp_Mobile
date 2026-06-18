@@ -326,7 +326,7 @@ class AdminView extends StatelessWidget {
                 onTap: () => context.push('/ventas/registrar')),
           ]),
           _Section(title: 'Gestión', items: [
-            _MenuCard(icon: Icons.inventory_2, title: 'Productos', subtitle: 'Inventario y stock', isEnabled: false),
+            _MenuCard(icon: Icons.inventory_2, title: 'Productos', subtitle: 'Inventario y stock', onTap: () => context.push('/productos')),
             _MenuCard(icon: Icons.people, title: 'Empleados', subtitle: 'Gestionar equipo', onTap: () => context.push('/empleados')),
             _MenuCard(icon: Icons.category, title: 'Categorías', subtitle: 'Gestionar categorías', onTap: () => context.push('/categorias')),
             _MenuCard(icon: Icons.people_outline, title: 'Clientes', subtitle: 'Gestionar clientes', onTap: () => context.push('/clientes')),

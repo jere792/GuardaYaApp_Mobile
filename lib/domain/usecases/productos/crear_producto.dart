@@ -4,12 +4,17 @@ import 'package:guardaya_app/core/usecases/usecase.dart';
 import 'package:guardaya_app/domain/entities/producto.dart';
 import 'package:guardaya_app/domain/repositories/productos_repository.dart';
 
-class ObtenerProductos implements UseCase<List<Producto>, String> {
+class CrearProducto implements UseCase<Producto, CrearProductoParams> {
   final ProductosRepository repository;
-  ObtenerProductos(this.repository);
+  CrearProducto(this.repository);
 
   @override
-  Future<Either<Failure, List<Producto>>> call(String empresaId) async {
-    return await repository.obtenerProductos(empresaId);
+  Future<Either<Failure, Producto>> call(CrearProductoParams params) async {
+    return await repository.crearProducto(params.producto);
   }
+}
+
+class CrearProductoParams {
+  final Producto producto;
+  CrearProductoParams({required this.producto});
 }

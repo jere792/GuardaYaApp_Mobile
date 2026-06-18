@@ -318,6 +318,10 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       appBar: AppBar(
         title: const Text('Registrar Venta'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         actions: [
           if (_isOffline)
             const Padding(

@@ -15,40 +15,88 @@ class VentasListPage extends ConsumerStatefulWidget {
 }
 
 class _VentasListPageState extends ConsumerState<VentasListPage> {
-  DateTime _fechaSeleccionada = DateTime.now();
+  final _codigoController = TextEditingController();
+  final _nombreController = TextEditingController();
+  final _telefonoController = TextEditingController();
+  DateTime? _fechaInicio;
+  DateTime? _fechaFin;
+  bool _showFilters = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _cargarVentas();
+      _cargarVentasDelDia();
     });
   }
 
-  void _cargarVentas() {
+  @override
+  void dispose() {
+    _codigoController.dispose();
+    _nombreController.dispose();
+    _telefonoController.dispose();
+    super.dispose();
+  }
+
+  void _cargarVentasDelDia() {
     final authState = ref.read(authProvider);
     final usuario = authState.usuario;
     if (usuario?.empresaId != null) {
-      ref.read(ventasProvider.notifier).obtenerVentasDelDia(
-            usuario!.empresaId!,
-            _fechaSeleccionada,
-          );
+      ref.read(ventasProvider.notifier).obtenerVentasDelDia(usuario!.empresaId!, DateTime.now());
     }
   }
 
-  Future<void> _seleccionarFecha() async {
+  Future<void> _seleccionarFecha({required bool inicio}) async {
     final fecha = await showDatePicker(
       context: context,
-      initialDate: _fechaSeleccionada,
+      initialDate: inicio ? (_fechaInicio ?? DateTime.now()) : (_fechaFin ?? DateTime.now()),
       firstDate: DateTime(2024),
       lastDate: DateTime.now(),
     );
     if (fecha != null) {
       setState(() {
-        _fechaSeleccionada = fecha;
+        if (inicio) {
+          _fechaInicio = fecha;
+        } else {
+          _fechaFin = fecha;
+        }
       });
-      _cargarVentas();
     }
+  }
+
+  void _buscar() {
+    final authState = ref.read(authProvider);
+    final usuario = authState.usuario;
+    if (usuario?.empresaId == null) return;
+
+    final codigo = _codigoController.text.trim();
+    final telefono = _telefonoController.text.trim();
+    final nombre = _nombreController.text.trim();
+
+    if (codigo.isEmpty && telefono.isEmpty && nombre.isEmpty && _fechaInicio == null) {
+      _cargarVentasDelDia();
+      return;
+    }
+
+    ref.read(ventasProvider.notifier).buscarVentas(
+      empresaId: usuario!.empresaId!,
+      codigo: codigo.isNotEmpty ? codigo : null,
+      telefono: telefono.isNotEmpty ? telefono : null,
+      nombre: nombre.isNotEmpty ? nombre : null,
+      fechaInicio: _fechaInicio,
+      fechaFin: _fechaFin,
+    );
+  }
+
+  void _limpiarFiltros() {
+    setState(() {
+      _codigoController.clear();
+      _nombreController.clear();
+      _telefonoController.clear();
+      _fechaInicio = null;
+      _fechaFin = null;
+    });
+    _cargarVentasDelDia();
   }
 
   @override
@@ -62,48 +110,19 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_today),
-            onPressed: _seleccionarFecha,
+            icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
+            onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Header de fecha
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.primary.withOpacity(0.1),
-            child: Row(
-              children: [
-                Icon(Icons.date_range, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Ventas del ${DateFormat('dd/MM/yyyy').format(_fechaSeleccionada)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${ventasState.ventas.length} ventas',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primary.withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Lista de ventas
-          Expanded(
-            child: _buildContent(ventasState),
-          ),
+          if (_showFilters) _buildFilterPanel(),
+          Expanded(child: _buildContent(ventasState)),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -114,21 +133,156 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     );
   }
 
-  Widget _buildContent(VentasState state) {
-    if (state.isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildFilterPanel() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      color: AppColors.primary.withOpacity(0.08),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _filterField(
+                  controller: _codigoController,
+                  hint: 'Código de operación',
+                  icon: Icons.qr_code,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _filterField(
+                  controller: _telefonoController,
+                  hint: 'Teléfono',
+                  icon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _filterField(
+                  controller: _nombreController,
+                  hint: 'Nombre del cliente',
+                  icon: Icons.person,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _dateChip(
+                  label: _fechaInicio != null ? DateFormat('dd/MM/yyyy').format(_fechaInicio!) : 'Fecha inicio',
+                  onTap: () => _seleccionarFecha(inicio: true),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(Icons.arrow_forward, size: 16, color: AppColors.textSecondary),
+              ),
+              Expanded(
+                child: _dateChip(
+                  label: _fechaFin != null ? DateFormat('dd/MM/yyyy').format(_fechaFin!) : 'Fecha fin',
+                  onTap: () => _seleccionarFecha(inicio: false),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: ElevatedButton.icon(
+                    onPressed: _buscar,
+                    icon: const Icon(Icons.search, size: 18),
+                    label: const Text('Buscar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 40,
+                child: OutlinedButton.icon(
+                  onPressed: _limpiarFiltros,
+                  icon: const Icon(Icons.clear, size: 18),
+                  label: const Text('Limpiar'),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    foregroundColor: Colors.grey.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+          prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+      ),
+    );
+  }
+
+  Widget _dateChip({required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Row(
           children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              'Cargando ventas...',
-              style: TextStyle(color: AppColors.primary),
-            ),
+            Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
           ],
         ),
-      );
+      ),
+    );
+  }
+
+  Widget _buildContent(VentasState state) {
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     if (state.error != null) {
@@ -138,25 +292,15 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, color: Colors.red, size: 48),
+              Icon(Icons.error_outline, color: AppColors.error, size: 48),
               const SizedBox(height: 16),
-              Text(
-                'Error al cargar ventas',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text('Error al cargar ventas', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text(
-                state.error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.red.shade700),
-              ),
+              Text(state.error!, textAlign: TextAlign.center, style: TextStyle(color: AppColors.error.shade700)),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _cargarVentas,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
+                onPressed: _cargarVentasDelDia,
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                 child: const Text('Reintentar'),
               ),
             ],
@@ -170,81 +314,65 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 64,
-              color: AppColors.primary.withOpacity(0.3),
-            ),
+            Icon(Icons.receipt_long_outlined, size: 64, color: AppColors.primary.withOpacity(0.3)),
             const SizedBox(height: 16),
-            Text(
-              'No hay ventas para este día',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
-            ),
+            Text('No hay ventas', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
             const SizedBox(height: 8),
-            Text(
-              'Toca el botón + para registrar una venta',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade400,
-              ),
-            ),
+            Text('Usa los filtros o toca + para registrar', style: TextStyle(fontSize: 14, color: Colors.grey.shade400)),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: state.ventas.length,
-      itemBuilder: (context, index) {
-        final venta = state.ventas[index];
-        return _VentaCard(venta: venta);
-      },
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          color: AppColors.primary.withOpacity(0.05),
+          child: Row(
+            children: [
+              Text('${state.ventas.length} resultado(s)',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.primary)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(8),
+            itemCount: state.ventas.length,
+            itemBuilder: (context, index) => _VentaCard(venta: state.ventas[index]),
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _VentaCard extends StatelessWidget {
   final Venta venta;
-
   const _VentaCard({required this.venta});
 
   Color _getEstadoColor(String estado) {
     switch (estado) {
-      case 'pendiente':
-        return Colors.orange;
-      case 'completado':
-        return Colors.green;
-      case 'cancelado':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'pendiente': return Colors.orange;
+      case 'completado': return Colors.green;
+      case 'cancelado': return Colors.red;
+      default: return Colors.grey;
     }
   }
 
   String _getEstadoLabel(String estado) {
     switch (estado) {
-      case 'pendiente':
-        return 'Pendiente';
-      case 'completado':
-        return 'Completado';
-      case 'cancelado':
-        return 'Cancelado';
-      default:
-        return estado;
+      case 'pendiente': return 'Pendiente';
+      case 'completado': return 'Completado';
+      case 'cancelado': return 'Cancelado';
+      default: return estado;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'es_PE',
-      symbol: 'S/',
-      decimalDigits: 2,
-    );
+    final currencyFormat = NumberFormat.currency(locale: 'es_PE', symbol: 'S/', decimalDigits: 2);
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -263,10 +391,7 @@ class _VentaCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       venta.clienteNombre ?? 'Cliente sin nombre',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -276,17 +401,11 @@ class _VentaCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: _getEstadoColor(venta.estado).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _getEstadoColor(venta.estado).withOpacity(0.3),
-                      ),
+                      border: Border.all(color: _getEstadoColor(venta.estado).withOpacity(0.3)),
                     ),
                     child: Text(
                       _getEstadoLabel(venta.estado),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: _getEstadoColor(venta.estado),
-                      ),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _getEstadoColor(venta.estado)),
                     ),
                   ),
                 ],
@@ -294,25 +413,15 @@ class _VentaCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.phone, size: 16, color: Colors.grey.shade500),
-                  const SizedBox(width: 4),
-                  Text(
-                    venta.clienteTelefono ?? 'Sin teléfono',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
+                  if (venta.clienteTelefono != null) ...[
+                    Icon(Icons.phone, size: 16, color: Colors.grey.shade500),
+                    const SizedBox(width: 4),
+                    Text(venta.clienteTelefono!, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                    const SizedBox(width: 16),
+                  ],
                   Icon(Icons.access_time, size: 16, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
-                  Text(
-                    DateFormat('HH:mm').format(venta.createdAt),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
+                  Text(DateFormat('HH:mm').format(venta.createdAt), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
                 ],
               ),
               if (venta.codigoYape != null) ...[
@@ -321,13 +430,7 @@ class _VentaCard extends StatelessWidget {
                   children: [
                     Icon(Icons.qr_code, size: 16, color: Colors.grey.shade500),
                     const SizedBox(width: 4),
-                    Text(
-                      'Yape: ${venta.codigoYape}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
+                    Text('Op: ${venta.codigoYape}', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                   ],
                 ),
               ],
@@ -337,24 +440,9 @@ class _VentaCard extends StatelessWidget {
                 children: [
                   if (venta.descripcion != null)
                     Expanded(
-                      child: Text(
-                        venta.descripcion!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: Text(venta.descripcion!, style: TextStyle(fontSize: 13, color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
-                  Text(
-                    currencyFormat.format(venta.monto),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
+                  Text(currencyFormat.format(venta.monto), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
                 ],
               ),
             ],
@@ -365,8 +453,9 @@ class _VentaCard extends StatelessWidget {
   }
 }
 
-late final NumberFormat currencyFormat = NumberFormat.currency(
-  locale: 'es_PE',
-  symbol: 'S/',
-  decimalDigits: 2,
-);
+extension on Color {
+  Color get shade700 {
+    if (this == AppColors.error) return const Color(0xFFC62828);
+    return this;
+  }
+}

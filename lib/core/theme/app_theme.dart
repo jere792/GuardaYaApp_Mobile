@@ -2,30 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
 
 class AppTheme {
+  static final Color _surfaceLight = AppColors.surface;
+
+  // Dark mode: fondo negro
+  static final Color _bgDark = const Color(0xFF000000);
+  static final Color _surfaceDark = const Color(0xFF121212);
+  static final Color _appbarDark = const Color(0xFF0A0A0A);
+
+  static final ColorScheme _lightScheme = ColorScheme.fromSeed(
+    seedColor: AppColors.primary,
+    brightness: Brightness.light,
+  );
+
+  static final ColorScheme _darkScheme = ColorScheme.dark(
+    primary: AppColors.primary,
+    onPrimary: Colors.white,
+    secondary: AppColors.accent,
+    surface: _surfaceDark,
+    onSurface: Colors.white,
+    error: AppColors.error,
+    onError: Colors.white,
+  );
+
   static ThemeData _baseTheme({
     required Brightness brightness,
   }) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: brightness,
-    );
+    final isDark = brightness == Brightness.dark;
+    final colorScheme = isDark ? _darkScheme : _lightScheme;
+    final surfaceColor = isDark ? _surfaceDark : _surfaceLight;
+    final bgColor = isDark ? _bgDark : _surfaceLight;
+    final appbarColor = isDark ? _appbarDark : _surfaceLight;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.surface,
+      scaffoldBackgroundColor: bgColor,
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: appbarColor,
         foregroundColor: colorScheme.onSurface,
         iconTheme: IconThemeData(color: colorScheme.primary),
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
-        color: colorScheme.surface,
+        elevation: isDark ? 4 : 2,
+        color: surfaceColor,
+        shadowColor: isDark ? Colors.black26 : Colors.black12,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

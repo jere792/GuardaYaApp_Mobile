@@ -56,6 +56,17 @@ class VentasDatasource {
     return response;
   }
 
+  Future<Map<String, dynamic>> obtenerVentaPorId(String ventaId) async {
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .select()
+        .eq('id', ventaId)
+        .single(),
+      operation: 'obtenerVentaPorId',
+    );
+    return response;
+  }
+
   Future<void> cambiarEstadoVenta(String ventaId, String nuevoEstado) async {
     await SupabaseService.withTimeout(
       SupabaseService.from('ventas')

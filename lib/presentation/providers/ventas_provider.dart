@@ -9,6 +9,7 @@ import 'package:guardaya_app/domain/repositories/ventas_repository.dart';
 import 'package:guardaya_app/domain/usecases/ventas/buscar_venta_por_codigo.dart';
 import 'package:guardaya_app/domain/usecases/ventas/buscar_venta_por_telefono.dart';
 import 'package:guardaya_app/domain/usecases/ventas/cambiar_estado_venta.dart';
+import 'package:guardaya_app/domain/usecases/ventas/obtener_venta_por_id.dart';
 import 'package:guardaya_app/domain/usecases/ventas/obtener_ventas_por_fecha.dart';
 import 'package:guardaya_app/domain/usecases/ventas/registrar_venta.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
@@ -20,6 +21,7 @@ final ventasProvider = StateNotifierProvider<VentasNotifier, VentasState>((ref) 
     buscarPorCodigo: ref.watch(buscarPorCodigoProvider),
     buscarPorTelefono: ref.watch(buscarPorTelefonoProvider),
     cambiarEstado: ref.watch(cambiarEstadoVentaProvider),
+    obtenerPorId: ref.watch(obtenerVentaPorIdProvider),
   );
 });
 
@@ -57,6 +59,10 @@ final cambiarEstadoVentaProvider = Provider<CambiarEstadoVenta>((ref) {
   return CambiarEstadoVenta(ref.watch(ventasRepositoryProvider));
 });
 
+final obtenerVentaPorIdProvider = Provider<ObtenerVentaPorId>((ref) {
+  return ObtenerVentaPorId(ref.watch(ventasRepositoryProvider));
+});
+
 class VentasState {
   final List<Venta> ventas;
   final Venta? ventaSeleccionada;
@@ -91,6 +97,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
   final BuscarVentaPorCodigo _buscarPorCodigo;
   final BuscarVentaPorTelefono _buscarPorTelefono;
   final CambiarEstadoVenta _cambiarEstado;
+  final ObtenerVentaPorId _obtenerPorId;
 
   VentasNotifier({
     required RegistrarVenta registrar,
@@ -98,12 +105,23 @@ class VentasNotifier extends StateNotifier<VentasState> {
     required BuscarVentaPorCodigo buscarPorCodigo,
     required BuscarVentaPorTelefono buscarPorTelefono,
     required CambiarEstadoVenta cambiarEstado,
+    required ObtenerVentaPorId obtenerPorId,
   })  : _registrar = registrar,
         _obtenerPorFecha = obtenerPorFecha,
         _buscarPorCodigo = buscarPorCodigo,
         _buscarPorTelefono = buscarPorTelefono,
         _cambiarEstado = cambiarEstado,
+        _obtenerPorId = obtenerPorId,
         super(const VentasState());
+
+  Future<void> obtenerVentaPorId(String ventaId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    final result = await _obtenerPorId(ventaId);
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (venta) => state = state.copyWith(isLoading: false, ventaSeleccionada: venta),
+    );
+  }
 
   Future<void> registrarVenta(Venta venta) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -128,7 +146,10 @@ class VentasNotifier extends StateNotifier<VentasState> {
     final result = await _buscarPorCodigo(BuscarVentaPorCodigoParams(empresaId: empresaId, codigo: codigo));
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (venta) => state = state.copyWith(isLoading: false, ventaSeleccionada: venta),
+      (venta) {
+        final list = venta != null ? [venta] : <Venta>[];
+        state = state.copyWith(isLoading: false, ventas: list);
+      },
     );
   }
 
@@ -139,6 +160,61 @@ class VentasNotifier extends StateNotifier<VentasState> {
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (ventas) => state = state.copyWith(isLoading: false, ventas: ventas),
     );
+  }
+
+  Future<void> buscarVentas({
+    required String empresaId,
+    String? codigo,
+    String? telefono,
+    String? nombre,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      List<Venta> resultados = [];
+
+      if (codigo != null && codigo.isNotEmpty) {
+        final result = await _buscarPorCodigo(BuscarVentaPorCodigoParams(empresaId: empresaId, codigo: codigo));
+        result.fold(
+          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar por código: ${failure.message}'),
+          (venta) {
+            if (venta != null) resultados.add(venta);
+          },
+        );
+        if (state.error != null) return;
+      } else if (telefono != null && telefono.isNotEmpty) {
+        final result = await _buscarPorTelefono(BuscarVentaPorTelefonoParams(empresaId: empresaId, telefono: telefono));
+        result.fold(
+          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar por teléfono: ${failure.message}'),
+          (ventas) => resultados = ventas,
+        );
+        if (state.error != null) return;
+      } else {
+        // Buscar por rango de fechas
+        final inicio = fechaInicio ?? DateTime.now();
+        final fin = fechaFin ?? inicio;
+        for (var d = inicio; !d.isAfter(fin); d = d.add(const Duration(days: 1))) {
+          final result = await _obtenerPorFecha(ObtenerVentasParams(empresaId: empresaId, fecha: d));
+          result.fold(
+            (failure) => {},
+            (ventas) => resultados.addAll(ventas),
+          );
+        }
+      }
+
+      // Filtrar por nombre localmente si se especificó
+      if (nombre != null && nombre.isNotEmpty) {
+        resultados = resultados.where((v) =>
+          v.clienteNombre?.toLowerCase().contains(nombre.toLowerCase()) ?? false
+        ).toList();
+      }
+
+      state = state.copyWith(isLoading: false, ventas: resultados);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
   }
 
   Future<void> cambiarEstado(String ventaId, String nuevoEstado) async {

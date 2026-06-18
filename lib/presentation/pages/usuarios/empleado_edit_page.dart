@@ -36,7 +36,13 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
 
     if (empleado == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Editar Empleado')),
+        appBar: AppBar(
+          title: const Text('Editar Empleado'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
         body: const Center(child: Text('Empleado no encontrado')),
       );
     }

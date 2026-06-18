@@ -84,6 +84,16 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
+  Future<Either<Failure, Venta>> obtenerVentaPorId(String ventaId) async {
+    try {
+      final data = await _remote.obtenerVentaPorId(ventaId);
+      return Right(VentaModel.fromJson(data).toEntity());
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> cambiarEstadoVenta(String ventaId, String nuevoEstado) async {
     try {
       await _remote.cambiarEstadoVenta(ventaId, nuevoEstado);

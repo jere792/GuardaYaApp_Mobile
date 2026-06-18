@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/theme_provider.dart';
@@ -139,22 +138,22 @@ class _LoginPageState extends ConsumerState<LoginPage>
     final isTall = screenHeight > 800;
 
     final bgGradient = isDarkMode
-        ? const [Color(0xFF222D20), Color(0xFF1E2832), Color(0xFF16213E)]
-        : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF), Color(0xFFFFFFFF)];
+        ? const [AppColors.darkBgGradient1, AppColors.darkBgGradient2, AppColors.darkBgGradient3]
+        : const [AppColors.surface, AppColors.surface, AppColors.surface];
 
     final footerColor = isDarkMode
-        ? Colors.white.withOpacity(0.5)
-        : const Color(0xFF0F0F0F).withOpacity(0.5);
+        ? AppColors.textOnDark.withOpacity(0.5)
+        : AppColors.textOnLight.withOpacity(0.5);
 
-    final cardColor = const Color(0xFFF8F9FA);
-    final cardTextColor = const Color(0xFF0F0F0F);
-    final cardTextSecondary = const Color(0xFF0F0F0F).withOpacity(0.6);
-    final cardDividerColor = const Color(0xFF0F0F0F).withOpacity(0.1);
-    final fieldBgColor = Colors.white;
-    final fieldBorderColor = isDarkMode ? const Color(0xFFE0E0E0) : const Color(0xFFD1D5DB);
-    final fieldTextColor = const Color(0xFF0F0F0F);
-    final fieldHintColor = const Color(0xFF0F0F0F).withOpacity(0.4);
-    final fieldIconColor = const Color(0xFF0F0F0F).withOpacity(0.5);
+    final cardColor = AppColors.cardLight;
+    final cardTextColor = AppColors.textOnLight;
+    final cardTextSecondary = AppColors.textOnLight.withOpacity(0.6);
+    final cardDividerColor = AppColors.textOnLight.withOpacity(0.1);
+    final fieldBgColor = AppColors.surface;
+    final fieldBorderColor = isDarkMode ? AppColors.borderDark : AppColors.borderLight;
+    final fieldTextColor = AppColors.textOnLight;
+    final fieldHintColor = AppColors.textOnLight.withOpacity(0.4);
+    final fieldIconColor = AppColors.textOnLight.withOpacity(0.5);
 
     final logoSize = isCompact ? 56.0 : 72.0;
     final logoIconSize = isCompact ? 28.0 : 36.0;
@@ -179,7 +178,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             height: logoSize,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [AppColors.primary, Color(0xFFFF8C42)],
+                colors: [AppColors.primary, AppColors.primaryLight],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
@@ -202,7 +201,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             style: TextStyle(
               fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : const Color(0xFF0F0F0F),
+              color: isDarkMode ? AppColors.textOnDark : AppColors.textOnLight,
               letterSpacing: 1.5,
             ),
           ),
@@ -212,8 +211,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
             style: TextStyle(
               fontSize: subtitleFontSize,
               color: isDarkMode
-                  ? Colors.white.withOpacity(0.7)
-                  : const Color(0xFF0F0F0F).withOpacity(0.7),
+                  ? AppColors.textOnDark.withOpacity(0.7)
+                  : AppColors.textOnLight.withOpacity(0.7),
               letterSpacing: 0.5,
             ),
           ),
@@ -226,7 +225,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         height: buttonHeight,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.primary, Color(0xFFFF8C42)],
+            colors: [AppColors.primary, AppColors.primaryLight],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -361,7 +360,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 BoxShadow(
                   color: isDarkMode
                       ? Colors.black.withOpacity(0.4)
-                      : const Color(0xFF222D20).withOpacity(0.25),
+                      : AppColors.darkBg.withOpacity(0.25),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
@@ -505,20 +504,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
         ),
         SizedBox(height: bottomSpacing),
-        // BOTON TEMPORAL - Solo para desarrollo
-        TextButton(
-          onPressed: () {
-            context.push('/crear-usuarios');
-          },
-          child: Text(
-            'Crear Usuarios (Dev)',
-            style: TextStyle(
-              color: isDarkMode ? Colors.white.withOpacity(0.5) : const Color(0xFF0F0F0F).withOpacity(0.5),
-              fontSize: 12,
-            ),
-          ),
-        ),
-        SizedBox(height: 2),
         FadeTransition(
           opacity: _fadeAnimation,
           child: Text(
@@ -535,7 +520,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: isDarkMode ? const Color(0xFF222D20) : Colors.white,
+      backgroundColor: isDarkMode ? AppColors.darkBg : AppColors.surface,
       body: Container(
         width: size.width,
         height: size.height,

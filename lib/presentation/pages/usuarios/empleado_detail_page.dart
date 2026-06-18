@@ -28,7 +28,13 @@ class EmpleadoDetailPage extends ConsumerWidget {
     final rolActual = ref.watch(authProvider).usuario?.rolId ?? 'empleado';
     if (empleado == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Empleado')),
+        appBar: AppBar(
+          title: const Text('Empleado'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
         body: const Center(child: Text('Empleado no encontrado')),
       );
     }

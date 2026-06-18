@@ -2,14 +2,15 @@
 
 ## Filosofía de Diseño
 
-GuardaYa usa un **sistema de diseño dual**:
+GuardaYa usa una **paleta fija** definida en `AppColors`:
 
 | Contexto | Colores | Uso |
 |----------|---------|-----|
-| **Branding de Empresa** | `color_primario`, `color_secundario`, `color_acento` | Home, Dashboard, Ventas, Productos (vistas operativas) |
-| **Neutrales de App** | `AppColors.primary` (naranja), grises, blancos | Login, Registro, Configuración, Perfil (vistas de sistema) |
+| **Primario** | `AppColors.primary` (#FF6B00 - naranja) | Toda la app (botones, appbar, acentos) |
+| **Secundario** | `AppColors.secondary` (#2D2D2D) | Textos secundarios, íconos |
+| **Acento** | `AppColors.accent` (#00B4D8) | Detalles y elementos de realce |
 
-**Regla de oro:** Solo **Login** (autenticación) usa colores neutrales de la app. **Todo lo demás** (dashboard, ventas, productos, clientes, perfil, configuración) usa colores de branding de la empresa.
+**Nota:** Anteriormente los colores se obtenían dinámicamente desde la tabla `empresas` (`color_primario`, `color_secundario`, `color_acento`). Ahora se usa una paleta fija para simplificar el sistema.
 
 ---
 

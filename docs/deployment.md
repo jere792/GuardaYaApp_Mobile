@@ -37,9 +37,6 @@ CREATE TABLE public.empresas (
     telefono TEXT,
     direccion TEXT,
     ruc_dni TEXT,
-    color_primario TEXT DEFAULT '#000000',
-    color_secundario TEXT DEFAULT '#FFFFFF',
-    color_acento TEXT DEFAULT '#0000FF',
     logo_url TEXT,
     plan TEXT DEFAULT 'basico',
     activo BOOLEAN DEFAULT true,
@@ -272,8 +269,8 @@ flutter run --hot
 ### 3.1 Desde SQL (rápido)
 ```sql
 -- Crear empresa primero
-INSERT INTO public.empresas (nombre, color_primario, color_secundario, color_acento)
-VALUES ('Mi Empresa', '#FF6B00', '#00C853', '#2979FF');
+INSERT INTO public.empresas (nombre)
+VALUES ('Mi Empresa');
 
 -- Crear super_admin
 SELECT public.crear_usuario_bcrypt(

@@ -41,6 +41,7 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(productosProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     var filtered = state.productos.where((p) => p.activo == !_mostrarInactivos).toList();
     if (_searchQuery.isNotEmpty) {
@@ -87,7 +88,7 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
             child: Container(
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.divider),
               ),
@@ -96,7 +97,7 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Buscar producto...',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  hintStyle: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
                   prefixIcon: Icon(Icons.search, size: 20, color: AppColors.primary),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -148,7 +149,7 @@ class _ProductosListPageState extends ConsumerState<ProductosListPage> {
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchQuery.isNotEmpty ? 'Sin resultados' : 'No hay productos',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                                  style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -225,6 +226,7 @@ class _ProductoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = producto.activo;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 5),
@@ -238,7 +240,7 @@ class _ProductoCard extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: isActive ? AppColors.primary.withOpacity(0.15) : Colors.grey.shade200,
+                backgroundColor: isActive ? AppColors.primary.withOpacity(0.15) : colorScheme.surfaceContainerHighest,
                 foregroundColor: isActive ? AppColors.primary : Colors.grey,
                 child: Icon(isActive ? Icons.inventory_2 : Icons.inventory_2_outlined, size: 22),
               ),
@@ -251,12 +253,12 @@ class _ProductoCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isActive ? AppColors.textPrimary : AppColors.textPrimary.withOpacity(0.4),
+                          color: isActive ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.4),
                         )),
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text('S/ ${producto.precio.toStringAsFixed(2)}',
-                          style: TextStyle(fontSize: 13, color: isActive ? AppColors.primary : Colors.grey.shade400)),
+                          style: TextStyle(fontSize: 13, color: isActive ? AppColors.primary : colorScheme.onSurfaceVariant)),
                     ),
                   ],
                 ),

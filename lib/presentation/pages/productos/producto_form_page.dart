@@ -142,8 +142,7 @@ class _ProductoFormPageState extends ConsumerState<ProductoFormPage> {
                 labelText: 'Nombre *',
                 prefixIcon: const Icon(Icons.inventory_2),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               textCapitalization: TextCapitalization.words,
             ),
@@ -154,8 +153,7 @@ class _ProductoFormPageState extends ConsumerState<ProductoFormPage> {
                 labelText: 'Descripción',
                 prefixIcon: const Icon(Icons.description),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
@@ -168,8 +166,7 @@ class _ProductoFormPageState extends ConsumerState<ProductoFormPage> {
                 labelText: 'Precio (S/) *',
                 prefixIcon: const Icon(Icons.monetization_on),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
             ),
             const SizedBox(height: 32),

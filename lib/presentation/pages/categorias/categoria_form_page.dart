@@ -133,8 +133,7 @@ class _CategoriaFormPageState extends ConsumerState<CategoriaFormPage> {
                 labelText: 'Nombre *',
                 prefixIcon: const Icon(Icons.category),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               textCapitalization: TextCapitalization.words,
             ),
@@ -145,8 +144,7 @@ class _CategoriaFormPageState extends ConsumerState<CategoriaFormPage> {
                 labelText: 'Descripción',
                 prefixIcon: const Icon(Icons.description),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,

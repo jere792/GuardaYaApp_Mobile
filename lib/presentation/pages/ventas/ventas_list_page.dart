@@ -129,6 +129,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   }
 
   Widget _buildFilterPanel() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       color: AppColors.primary.withOpacity(0.08),
@@ -147,7 +148,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
           Row(
             children: [
               Expanded(child: _dateChip(label: _fechaInicio != null ? DateFormat('dd/MM/yyyy').format(_fechaInicio!) : 'Fecha inicio', onTap: () => _seleccionarFecha(inicio: true))),
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward, size: 16, color: AppColors.textSecondary)),
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward, size: 16)),
               Expanded(child: _dateChip(label: _fechaFin != null ? DateFormat('dd/MM/yyyy').format(_fechaFin!) : 'Fecha fin', onTap: () => _seleccionarFecha(inicio: false))),
             ],
           ),
@@ -172,7 +173,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
                   onPressed: _limpiarFiltros,
                   icon: const Icon(Icons.clear, size: 18),
                   label: const Text('Limpiar'),
-                  style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), foregroundColor: Colors.grey.shade700),
+                  style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), foregroundColor: colorScheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -183,16 +184,17 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   }
 
   Widget _filterField({required TextEditingController controller, required String hint, required IconData icon, TextInputType keyboardType = TextInputType.text}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       height: 40,
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.divider)),
+      decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: colorScheme.outlineVariant)),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+          hintStyle: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
           prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -202,17 +204,18 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   }
 
   Widget _dateChip({required String label, required VoidCallback onTap}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       child: Container(
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.divider)),
+        decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: colorScheme.outlineVariant)),
         child: Row(
           children: [
-            Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+            Icon(Icons.calendar_today, size: 16, color: colorScheme.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+            Text(label, style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
@@ -220,6 +223,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   }
 
   Widget _buildContent(VentasState state) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
@@ -235,7 +239,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
               const SizedBox(height: 16),
               Text('Error al cargar ventas', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text(state.error!, textAlign: TextAlign.center, style: TextStyle(color: AppColors.error.shade700)),
+              Text(state.error!, textAlign: TextAlign.center, style: TextStyle(color: colorScheme.onSurfaceVariant)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _cargarVentasDelDia,
@@ -255,9 +259,9 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
           children: [
             Icon(Icons.receipt_long_outlined, size: 64, color: AppColors.primary.withOpacity(0.3)),
             const SizedBox(height: 16),
-            Text('No hay ventas', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+            Text('No hay ventas', style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant)),
             const SizedBox(height: 8),
-            Text('Usa los filtros o toca + para registrar', style: TextStyle(fontSize: 14, color: Colors.grey.shade400)),
+            Text('Usa los filtros o toca + para registrar', style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
           ],
         ),
       );
@@ -295,6 +299,7 @@ class _VentaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final currencyFormat = NumberFormat.currency(locale: 'es_PE', symbol: 'S/', decimalDigits: 2);
 
     return Card(
@@ -313,7 +318,7 @@ class _VentaCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(venta.clienteNombre ?? 'Cliente sin nombre',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
                         maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                   Container(
@@ -332,23 +337,23 @@ class _VentaCard extends StatelessWidget {
               Row(
                 children: [
                   if (venta.clienteTelefono != null) ...[
-                    Icon(Icons.phone, size: 16, color: Colors.grey.shade500),
+                    Icon(Icons.phone, size: 16, color: colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
-                    Text(venta.clienteTelefono!, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                    Text(venta.clienteTelefono!, style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
                     const SizedBox(width: 16),
                   ],
-                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade500),
+                  Icon(Icons.access_time, size: 16, color: colorScheme.onSurfaceVariant),
                   const SizedBox(width: 4),
-                  Text(DateFormat('HH:mm').format(venta.createdAt), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                  Text(DateFormat('HH:mm').format(venta.createdAt), style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
                 ],
               ),
               if (venta.codigoYape != null) ...[
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.qr_code, size: 16, color: Colors.grey.shade500),
+                    Icon(Icons.qr_code, size: 16, color: colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
-                    Text('Op: ${venta.codigoYape}', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                    Text('Op: ${venta.codigoYape}', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
                   ],
                 ),
               ],
@@ -358,7 +363,7 @@ class _VentaCard extends StatelessWidget {
                 children: [
                   if (venta.descripcion != null)
                     Expanded(
-                      child: Text(venta.descripcion!, style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                      child: Text(venta.descripcion!, style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                   Text(currencyFormat.format(venta.monto),

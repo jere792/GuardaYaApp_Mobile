@@ -146,8 +146,7 @@ class _EmpleadoEditPageState extends ConsumerState<EmpleadoEditPage> {
                 labelText: 'Rol',
                 prefixIcon: const Icon(Icons.badge_outlined),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               items: rolesDisponibles.map((rol) => DropdownMenuItem(
                 value: rol,

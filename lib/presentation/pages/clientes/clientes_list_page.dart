@@ -41,6 +41,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(clientesProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     var filtered = state.clientes.where((c) => c.activo == !_mostrarInactivos).toList();
     if (_searchQuery.isNotEmpty) {
@@ -87,7 +88,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
             child: Container(
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.divider),
               ),
@@ -96,7 +97,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Buscar cliente...',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  hintStyle: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
                   prefixIcon: Icon(Icons.search, size: 20, color: AppColors.primary),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -148,7 +149,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchQuery.isNotEmpty ? 'Sin resultados' : (_mostrarInactivos ? 'No hay inactivos' : 'No hay clientes'),
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                                  style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -225,6 +226,7 @@ class _ClienteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = cliente.activo;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 5),
@@ -238,7 +240,7 @@ class _ClienteCard extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: isActive ? AppColors.primary.withOpacity(0.15) : Colors.grey.shade200,
+                backgroundColor: isActive ? AppColors.primary.withOpacity(0.15) : colorScheme.surfaceContainerHighest,
                 foregroundColor: isActive ? AppColors.primary : Colors.grey,
                 child: Text(
                   (cliente.nombre.isNotEmpty ? cliente.nombre.substring(0, 1) : '?').toUpperCase(),
@@ -254,17 +256,17 @@ class _ClienteCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isActive ? AppColors.textPrimary : AppColors.textPrimary.withOpacity(0.4),
+                          color: isActive ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.4),
                         )),
                     if (cliente.telefono != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Row(
                           children: [
-                            Icon(Icons.phone, size: 14, color: Colors.grey.shade500),
+                            Icon(Icons.phone, size: 14, color: colorScheme.onSurfaceVariant),
                             const SizedBox(width: 4),
                             Text(cliente.telefono!,
-                                style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                                style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
                           ],
                         ),
                       ),

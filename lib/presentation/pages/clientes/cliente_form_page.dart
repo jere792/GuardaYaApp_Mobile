@@ -148,8 +148,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
                 labelText: 'Nombre *',
                 prefixIcon: const Icon(Icons.person),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               textCapitalization: TextCapitalization.words,
             ),
@@ -161,8 +160,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
                 labelText: 'Teléfono',
                 prefixIcon: const Icon(Icons.phone),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
             ),
             const SizedBox(height: 16),
@@ -173,8 +171,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
                 labelText: 'Email',
                 prefixIcon: const Icon(Icons.email),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
             ),
             const SizedBox(height: 16),
@@ -184,8 +181,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
                 labelText: 'Dirección',
                 prefixIcon: const Icon(Icons.location_on),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               textCapitalization: TextCapitalization.sentences,
             ),
@@ -196,8 +192,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
                 labelText: 'Notas',
                 prefixIcon: const Icon(Icons.notes),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+
               ),
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,

@@ -75,7 +75,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
             child: Container(
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.divider),
               ),
@@ -84,7 +84,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Buscar categoría...',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  hintStyle: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
                   prefixIcon: Icon(Icons.search, size: 20, color: AppColors.primary),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -136,7 +136,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchQuery.isNotEmpty ? 'Sin resultados' : 'No hay categorías',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                                  style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -213,6 +213,7 @@ class _CategoriaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = categoria.activo;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 5),
@@ -226,7 +227,7 @@ class _CategoriaCard extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: isActive ? AppColors.primary.withOpacity(0.15) : Colors.grey.shade200,
+                backgroundColor: isActive ? AppColors.primary.withOpacity(0.15) : colorScheme.surfaceContainerHighest,
                 foregroundColor: isActive ? AppColors.primary : Colors.grey,
                 child: Icon(isActive ? Icons.category : Icons.category_outlined, size: 22),
               ),
@@ -239,14 +240,14 @@ class _CategoriaCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isActive ? AppColors.textPrimary : AppColors.textPrimary.withOpacity(0.4),
+                          color: isActive ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.4),
                         )),
                     if (categoria.descripcion != null && categoria.descripcion!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(categoria.descripcion!,
                             maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
                       ),
                   ],
                 ),

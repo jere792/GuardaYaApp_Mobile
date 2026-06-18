@@ -9,6 +9,9 @@ import 'package:guardaya_app/presentation/pages/ventas/registrar_venta_page.dart
 import 'package:guardaya_app/presentation/pages/ventas/venta_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/ventas/ventas_list_page.dart';
 import 'package:guardaya_app/presentation/pages/perfil/perfil_page.dart';
+import 'package:guardaya_app/presentation/pages/empresas/empresa_detail_page.dart';
+import 'package:guardaya_app/presentation/pages/empresas/empresa_form_page.dart';
+import 'package:guardaya_app/presentation/pages/empresas/empresas_list_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/crear_empleado_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/crear_usuario_page.dart';
 import 'package:guardaya_app/presentation/pages/usuarios/empleado_detail_page.dart';
@@ -59,6 +62,10 @@ const Map<String, List<String>> _routeRoles = {
   '/reportes': ['super_admin', 'admin', 'empleado'],
   '/admin/usuarios': ['super_admin'],
   '/admin/usuarios/crear': ['super_admin'],
+  '/admin/empresas': ['super_admin'],
+  '/admin/empresas/crear': ['super_admin'],
+  '/admin/empresas/:id': ['super_admin'],
+  '/admin/empresas/editar/:id': ['super_admin'],
 };
 
 bool _isRouteAllowed(String route, String? rol) {
@@ -85,6 +92,10 @@ bool _isRouteAllowed(String route, String? rol) {
     normalizedRoute = '/productos/editar/:id';
   } else if (route.startsWith('/productos/') && route != '/productos/crear') {
     normalizedRoute = '/productos/:id';
+  } else if (route.startsWith('/admin/empresas/editar/')) {
+    normalizedRoute = '/admin/empresas/editar/:id';
+  } else if (route.startsWith('/admin/empresas/') && route != '/admin/empresas/crear') {
+    normalizedRoute = '/admin/empresas/:id';
   }
   final allowed = _routeRoles[normalizedRoute];
   return allowed != null && allowed.contains(rol);
@@ -136,6 +147,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/admin/usuarios', builder: (context, state) => const GestionUsuariosPage()),
       GoRoute(path: '/admin/usuarios/crear', builder: (context, state) => const CrearUsuarioPage()),
+      GoRoute(path: '/admin/empresas', builder: (context, state) => const EmpresasListPage()),
+      GoRoute(path: '/admin/empresas/crear', builder: (context, state) => const EmpresaFormPage()),
+      GoRoute(
+        path: '/admin/empresas/:id',
+        builder: (context, state) => EmpresaDetailPage(empresaId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/admin/empresas/editar/:id',
+        builder: (context, state) => EmpresaFormPage(empresaId: state.pathParameters['id']!),
+      ),
       // Página temporal para crear usuarios en Supabase Auth
       // TODO: Eliminar después de crear los usuarios
       GoRoute(path: '/categorias', builder: (context, state) => const CategoriasListPage()),

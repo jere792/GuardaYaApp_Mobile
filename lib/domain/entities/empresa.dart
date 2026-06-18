@@ -27,6 +27,34 @@ class Empresa extends Equatable {
     required this.createdAt,
   });
 
+  Empresa copyWith({
+    String? id,
+    String? nombre,
+    String? slug,
+    String? emailContacto,
+    String? telefono,
+    String? direccion,
+    String? rucDni,
+    String? logoUrl,
+    String? plan,
+    bool? activo,
+    DateTime? createdAt,
+  }) {
+    return Empresa(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      slug: slug ?? this.slug,
+      emailContacto: emailContacto ?? this.emailContacto,
+      telefono: telefono ?? this.telefono,
+      direccion: direccion ?? this.direccion,
+      rucDni: rucDni ?? this.rucDni,
+      logoUrl: logoUrl ?? this.logoUrl,
+      plan: plan ?? this.plan,
+      activo: activo ?? this.activo,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id, nombre, slug, emailContacto, telefono, direccion, rucDni,

@@ -21,7 +21,9 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
   final _telefonoController = TextEditingController();
   final _direccionController = TextEditingController();
   final _rucDniController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _isEditing = false;
+  String _planSeleccionado = 'basico';
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
       _telefonoController.text = e.telefono ?? '';
       _direccionController.text = e.direccion ?? '';
       _rucDniController.text = e.rucDni ?? '';
+      _planSeleccionado = e.plan;
     }
   }
 
@@ -56,27 +59,21 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
     super.dispose();
   }
 
+  String? _validarRequerido(String? value, String campo) {
+    if (value == null || value.trim().isEmpty) return '$campo es obligatorio';
+    return null;
+  }
+
   void _guardar() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final nombre = _nombreController.text.trim();
-    if (nombre.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre es obligatorio')),
-      );
-      return;
-    }
-
     final slug = _slugController.text.trim();
-    if (slug.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El slug es obligatorio')),
-      );
-      return;
-    }
-
     final email = _emailController.text.trim();
     final telefono = _telefonoController.text.trim();
     final direccion = _direccionController.text.trim();
     final rucDni = _rucDniController.text.trim();
+    final plan = _planSeleccionado;
     final now = DateTime.now();
 
     if (_isEditing) {
@@ -92,6 +89,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
           telefono: telefono.isNotEmpty ? telefono : null,
           direccion: direccion.isNotEmpty ? direccion : null,
           rucDni: rucDni.isNotEmpty ? rucDni : null,
+          plan: plan,
         ),
       );
     } else {
@@ -104,7 +102,7 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
           telefono: telefono.isNotEmpty ? telefono : null,
           direccion: direccion.isNotEmpty ? direccion : null,
           rucDni: rucDni.isNotEmpty ? rucDni : null,
-          plan: 'basico',
+          plan: plan,
           activo: true,
           createdAt: now,
         ),
@@ -140,85 +138,127 @@ class _EmpresaFormPageState extends ConsumerState<EmpresaFormPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nombreController,
-              decoration: InputDecoration(
-                labelText: 'Nombre *',
-                prefixIcon: const Icon(Icons.business),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _slugController,
-              decoration: InputDecoration(
-                labelText: 'Slug *',
-                prefixIcon: const Icon(Icons.link),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _rucDniController,
-              decoration: InputDecoration(
-                labelText: 'RUC / DNI',
-                prefixIcon: const Icon(Icons.badge),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email de contacto',
-                prefixIcon: const Icon(Icons.email),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _telefonoController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'Teléfono',
-                prefixIcon: const Icon(Icons.phone),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _direccionController,
-              decoration: InputDecoration(
-                labelText: 'Dirección',
-                prefixIcon: const Icon(Icons.location_on),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 32),
-            Consumer(builder: (context, ref, _) {
-              final state = ref.watch(empresasProvider);
-              return SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _guardar,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: state.isLoading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(_isEditing ? 'Guardar Cambios' : 'Crear Empresa', style: const TextStyle(fontSize: 16)),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _nombreController,
+                decoration: InputDecoration(
+                  labelText: 'Nombre *',
+                  prefixIcon: const Icon(Icons.business),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  counterText: '',
                 ),
-              );
-            }),
-          ],
+                textCapitalization: TextCapitalization.words,
+                maxLength: 100,
+                validator: (v) => _validarRequerido(v, 'El nombre'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _slugController,
+                decoration: InputDecoration(
+                  labelText: 'Slug *',
+                  prefixIcon: const Icon(Icons.link),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  counterText: '',
+                  helperText: 'Identificador único (ej: mi-empresa)',
+                ),
+                maxLength: 50,
+                validator: (v) => _validarRequerido(v, 'El slug'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _rucDniController,
+                decoration: InputDecoration(
+                  labelText: 'RUC / DNI *',
+                  prefixIcon: const Icon(Icons.badge),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  counterText: '',
+                  helperText: '8 dígitos para DNI, 11 para RUC',
+                ),
+                keyboardType: TextInputType.number,
+                maxLength: 11,
+                validator: (v) => _validarRequerido(v, 'El RUC/DNI'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email de contacto (opcional)',
+                  prefixIcon: const Icon(Icons.email),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  counterText: '',
+                ),
+                maxLength: 100,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _telefonoController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Teléfono *',
+                  prefixIcon: const Icon(Icons.phone),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  counterText: '',
+                ),
+                maxLength: 15,
+                validator: (v) => _validarRequerido(v, 'El teléfono'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _direccionController,
+                decoration: InputDecoration(
+                  labelText: 'Dirección (opcional)',
+                  prefixIcon: const Icon(Icons.location_on),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  counterText: '',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                maxLength: 200,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _planSeleccionado,
+                decoration: InputDecoration(
+                  labelText: 'Plan *',
+                  prefixIcon: const Icon(Icons.verified),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.shade800
+                      : Colors.grey.shade100,
+                ),
+                items: ['basico', 'premium', 'empresarial'].map((p) => DropdownMenuItem(
+                  value: p,
+                  child: Text(p.toUpperCase()),
+                )).toList(),
+                onChanged: (v) {
+                  if (v != null) setState(() => _planSeleccionado = v);
+                },
+              ),
+              const SizedBox(height: 32),
+              Consumer(builder: (context, ref, _) {
+                final state = ref.watch(empresasProvider);
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: state.isLoading ? null : _guardar,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: state.isLoading
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(_isEditing ? 'Guardar Cambios' : 'Crear Empresa', style: const TextStyle(fontSize: 16)),
+                  ),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );

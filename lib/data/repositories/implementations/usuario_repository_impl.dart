@@ -58,9 +58,9 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
   }
 
   @override
-  Future<Either<Failure, void>> desactivarUsuario(String userId) async {
+  Future<Either<Failure, void>> desactivarUsuario(String userId, {bool reactivar = false}) async {
     try {
-      await _datasource.desactivarUsuario(userId);
+      await _datasource.desactivarUsuario(userId, reactivar: reactivar);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -74,6 +74,7 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
     required String userId,
     required String nombre,
     required String username,
+    String? apellidos,
     String? email,
     String? telefono,
     required String rolNombre,
@@ -83,10 +84,23 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
         userId: userId,
         nombre: nombre,
         username: username,
+        apellidos: apellidos,
         email: email,
         telefono: telefono,
         rolNombre: rolNombre,
       );
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> cambiarPassword(String userId, String newPassword) async {
+    try {
+      await _datasource.cambiarPassword(userId, newPassword);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

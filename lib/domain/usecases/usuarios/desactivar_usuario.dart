@@ -9,11 +9,12 @@ class DesactivarUsuario implements UseCase<void, DesactivarUsuarioParams> {
 
   @override
   Future<Either<Failure, void>> call(DesactivarUsuarioParams params) async {
-    return await repository.desactivarUsuario(params.userId);
+    return await repository.desactivarUsuario(params.userId, reactivar: params.reactivar);
   }
 }
 
 class DesactivarUsuarioParams {
   final String userId;
-  DesactivarUsuarioParams({required this.userId});
+  final bool reactivar;
+  DesactivarUsuarioParams({required this.userId, this.reactivar = false});
 }

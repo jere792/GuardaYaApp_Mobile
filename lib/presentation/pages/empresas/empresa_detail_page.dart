@@ -122,6 +122,20 @@ class EmpresaDetailPage extends ConsumerWidget {
                     label: 'Creada',
                     value: '${e.createdAt.day}/${e.createdAt.month}/${e.createdAt.year}',
                   ),
+                  const Spacer(),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.push('/admin/usuarios'),
+                      icon: const Icon(Icons.people),
+                      label: const Text('Ver Usuarios'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:guardaya_app/data/datasources/remote/usuario_datasource.dart';
 import 'package:guardaya_app/data/repositories/implementations/usuario_repository_impl.dart';
 import 'package:guardaya_app/domain/entities/usuario.dart';
 import 'package:guardaya_app/domain/usecases/usuarios/actualizar_usuario.dart';
+import 'package:guardaya_app/domain/usecases/usuarios/cambiar_password.dart';
 import 'package:guardaya_app/domain/usecases/usuarios/crear_usuario.dart';
 import 'package:guardaya_app/domain/usecases/usuarios/desactivar_usuario.dart';
 import 'package:guardaya_app/domain/usecases/usuarios/listar_usuarios.dart';
@@ -14,6 +15,7 @@ final crearUsuarioProvider = Provider<CrearUsuario>((ref) => CrearUsuario(ref.wa
 final listarUsuariosProvider = Provider<ListarUsuarios>((ref) => ListarUsuarios(ref.watch(usuarioRepositoryProvider)));
 final desactivarUsuarioProvider = Provider<DesactivarUsuario>((ref) => DesactivarUsuario(ref.watch(usuarioRepositoryProvider)));
 final actualizarUsuarioProvider = Provider<ActualizarUsuario>((ref) => ActualizarUsuario(ref.watch(usuarioRepositoryProvider)));
+final cambiarPasswordProvider = Provider<CambiarPassword>((ref) => CambiarPassword(ref.watch(usuarioRepositoryProvider)));
 
 final usuariosProvider = StateNotifierProvider<UsuariosNotifier, UsuariosState>((ref) {
   return UsuariosNotifier(
@@ -21,6 +23,7 @@ final usuariosProvider = StateNotifierProvider<UsuariosNotifier, UsuariosState>(
     listar: ref.watch(listarUsuariosProvider),
     desactivar: ref.watch(desactivarUsuarioProvider),
     actualizar: ref.watch(actualizarUsuarioProvider),
+    cambiarPassword: ref.watch(cambiarPasswordProvider),
   );
 });
 
@@ -57,16 +60,19 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
   final ListarUsuarios _listar;
   final DesactivarUsuario _desactivar;
   final ActualizarUsuario _actualizar;
+  final CambiarPassword _cambiarPassword;
 
   UsuariosNotifier({
     required CrearUsuario crear,
     required ListarUsuarios listar,
     required DesactivarUsuario desactivar,
     required ActualizarUsuario actualizar,
+    required CambiarPassword cambiarPassword,
   })  : _crear = crear,
         _listar = listar,
         _desactivar = desactivar,
         _actualizar = actualizar,
+        _cambiarPassword = cambiarPassword,
         super(const UsuariosState());
 
   Future<void> crearEmpleado({
@@ -111,13 +117,12 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
     }
   }
 
-  Future<void> desactivarEmpleado(String userId) async {
+  Future<void> desactivarEmpleado(String userId, {bool reactivar = false}) async {
     state = state.copyWith(isLoading: true, error: null, success: false);
-    final result = await _desactivar(DesactivarUsuarioParams(userId: userId));
+    final result = await _desactivar(DesactivarUsuarioParams(userId: userId, reactivar: reactivar));
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (_) {
-        // Actualizar el estado local del usuario
         final updatedUsuarios = state.usuarios.map((u) {
           if (u.id == userId) {
             return Usuario(
@@ -129,7 +134,7 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
               email: u.email,
               rolId: u.rolId,
               empresaId: u.empresaId,
-              activo: false,
+              activo: reactivar,
               createdAt: u.createdAt,
             );
           }
@@ -144,6 +149,7 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
     required String userId,
     required String nombre,
     required String username,
+    String? apellidos,
     String? email,
     String? telefono,
     required String rolNombre,
@@ -153,6 +159,7 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
       userId: userId,
       nombre: nombre,
       username: username,
+      apellidos: apellidos,
       email: email,
       telefono: telefono,
       rolNombre: rolNombre,
@@ -166,7 +173,7 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
               id: u.id,
               username: username,
               nombre: nombre,
-              apellidos: u.apellidos,
+              apellidos: apellidos,
               telefono: telefono,
               email: email,
               rolId: rolNombre,
@@ -179,6 +186,15 @@ class UsuariosNotifier extends StateNotifier<UsuariosState> {
         }).toList();
         state = state.copyWith(isLoading: false, usuarios: updatedUsuarios.cast<Usuario>(), success: true);
       },
+    );
+  }
+
+  Future<void> cambiarPassword(String userId, String newPassword) async {
+    state = state.copyWith(isLoading: true, error: null, success: false);
+    final result = await _cambiarPassword(CambiarPasswordParams(userId: userId, newPassword: newPassword));
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (_) => state = state.copyWith(isLoading: false, success: true),
     );
   }
 

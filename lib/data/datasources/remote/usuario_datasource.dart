@@ -4,7 +4,6 @@ import 'package:guardaya_app/core/errors/exceptions.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
 
 class UsuarioDatasource {
-  /// Crear usuario usando RPC con bcrypt (seguro para login).
   Future<Map<String, dynamic>> crearUsuario({
     required String username,
     required String password,
@@ -39,18 +38,13 @@ class UsuarioDatasource {
     }
   }
 
-  /// Listar usuarios.
-  /// Si es super_admin (rol == 'super_admin'), lista TODOS los usuarios.
-  /// Si es admin, lista solo los de su empresa.
   Future<List<dynamic>> listarUsuarios(String? empresaId, String rol) async {
     try {
       log('UsuarioDatasource.listarUsuarios: rol=$rol, empresaId=$empresaId');
 
-      // ⚠️ query.eq() devuelve un NUEVO builder; hay que capturarlo
       var query = SupabaseService.from('usuarios').select();
 
       if (rol != 'super_admin') {
-        // Admin: solo usuarios de su empresa
         if (empresaId == null || empresaId.isEmpty) {
           log('UsuarioDatasource.listarUsuarios: ERROR - empresaId es null/vacio para admin');
           throw ServerException(message: 'El admin no tiene empresa asignada');
@@ -77,11 +71,11 @@ class UsuarioDatasource {
     }
   }
 
-  /// Actualizar datos básicos de un usuario (nombre, username, email, teléfono, rol)
   Future<Map<String, dynamic>> actualizarUsuario({
     required String userId,
     required String nombre,
     required String username,
+    String? apellidos,
     String? email,
     String? telefono,
     required String rolNombre,
@@ -93,6 +87,7 @@ class UsuarioDatasource {
         'rol_nombre': rolNombre,
         'updated_at': DateTime.now().toIso8601String(),
       };
+      if (apellidos != null) updateData['apellidos'] = apellidos;
       if (email != null) updateData['email'] = email;
       if (telefono != null) updateData['telefono'] = telefono;
 
@@ -110,19 +105,28 @@ class UsuarioDatasource {
     }
   }
 
-  /// Desactivar usuario (query directa)
-  Future<Map<String, dynamic>> desactivarUsuario(String userId) async {
+  Future<Map<String, dynamic>> desactivarUsuario(String userId, {bool reactivar = false}) async {
     try {
       await SupabaseService.withTimeout(
         SupabaseService.from('usuarios')
-            .update({
-              'activo': false,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
+            .update({'activo': reactivar})
             .eq('id', userId),
         operation: 'desactivarUsuario',
       );
       return {'success': true};
+    } on PostgrestException catch (e) {
+      throw ServerException(message: e.message);
+    } catch (e) {
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  Future<void> cambiarPassword(String userId, String newPassword) async {
+    try {
+      await SupabaseService.rpc(
+        'cambiar_password',
+        params: {'p_user_id': userId, 'p_new_password': newPassword},
+      );
     } on PostgrestException catch (e) {
       throw ServerException(message: e.message);
     } catch (e) {

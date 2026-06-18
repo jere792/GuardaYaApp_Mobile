@@ -16,14 +16,17 @@ abstract class UsuarioRepository {
 
   Future<Either<Failure, List<Usuario>>> listarUsuarios(String? empresaId, String rol);
 
-  Future<Either<Failure, void>> desactivarUsuario(String userId);
+  Future<Either<Failure, void>> desactivarUsuario(String userId, {bool reactivar = false});
 
   Future<Either<Failure, void>> actualizarUsuario({
     required String userId,
     required String nombre,
     required String username,
+    String? apellidos,
     String? email,
     String? telefono,
     required String rolNombre,
   });
+
+  Future<Either<Failure, void>> cambiarPassword(String userId, String newPassword);
 }

@@ -79,51 +79,34 @@ class _LoginPageState extends ConsumerState<LoginPage>
     debugPrint('Login attempt: username=$username, passwordLength=${password.length}');
     
     try {
-      // Llamar al login y esperar que complete
       await ref.read(authProvider.notifier).login(username, password);
-      
-      // Pequeña pausa para que el estado se actualice
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      // Verificar si hubo error
-      final authState = ref.read(authProvider);
-      debugPrint('Login result: isAuthenticated=${authState.isAuthenticated}, error=${authState.error}');
-      
-      if (!mounted) return;
-      
-      if (authState.error != null || !authState.isAuthenticated) {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_getFriendlyError(authState.error)),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } else {
-        setState(() => _isLoading = false);
-      }
     } catch (e) {
       debugPrint('Login exception: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error de conexión. Intente nuevamente.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    final authState = ref.read(authProvider);
+    if (authState.error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_getFriendlyError(authState.error)),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   String _getFriendlyError(String? error) {
     if (error == null) return 'Usuario o contraseña incorrectos';
-    if (error.toLowerCase().contains('invalid') || 
-        error.toLowerCase().contains('credentials') ||
-        error.toLowerCase().contains('login')) {
+    final e = error.toLowerCase();
+    if (e.contains('invalid') || e.contains('credentials') || e.contains('login')) {
       return 'Usuario o contraseña incorrectos';
+    }
+    if (e.contains('no se encontr') || e.contains('not found') || e.contains('no existe')) {
+      return 'El usuario no existe';
+    }
+    if (e.contains('inactivo') || e.contains('disabled') || e.contains('activo')) {
+      return 'La cuenta está desactivada';
     }
     return error;
   }
@@ -443,6 +426,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 ),
                 SizedBox(height: cardSpacing),
                 buildLoginButton(),
+
                 SizedBox(height: isCompact ? 6.0 : 10.0),
                 Row(
                   children: [

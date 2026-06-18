@@ -165,6 +165,7 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
               onDesactivar: () => _confirmarDesactivar(context, u0),
               onVerDetalle: () => context.push('/empleados/detalle/${u0.id}'),
               onEditar: () => context.push('/empleados/editar/${u0.id}'),
+              onCambiarPassword: () => _mostrarDialogCambiarPassword(u0),
             ),
           ),
           const SizedBox(width: 12),
@@ -177,9 +178,10 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
                 usuario: u1,
                 empresaNombre: _empresaName(u1.empresaId),
                 rolLabel: _rolLabel(u1.rolId),
-                onDesactivar: () => _confirmarDesactivar(context, u1),
-                onVerDetalle: () => context.push('/empleados/detalle/${u1.id}'),
-                onEditar: () => context.push('/empleados/editar/${u1.id}'),
+              onDesactivar: () => _confirmarDesactivar(context, u1),
+              onVerDetalle: () => context.push('/empleados/detalle/${u1.id}'),
+              onEditar: () => context.push('/empleados/editar/${u1.id}'),
+              onCambiarPassword: () => _mostrarDialogCambiarPassword(u1),
               ),
             ),
           );
@@ -398,6 +400,78 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
     );
   }
 
+  void _mostrarDialogCambiarPassword(Usuario u) {
+    final passwordCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Cambiar contrase\u00f1a - ${u.nombre}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: passwordCtrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Nueva contrase\u00f1a *',
+                prefixIcon: const Icon(Icons.lock),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmCtrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Confirmar contrase\u00f1a *',
+                prefixIcon: const Icon(Icons.lock_outline),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              final pwd = passwordCtrl.text.trim();
+              final confirm = confirmCtrl.text.trim();
+              if (pwd.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La contrase\u00f1a debe tener al menos 6 caracteres')),
+                );
+                return;
+              }
+              if (pwd != confirm) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Las contrase\u00f1as no coinciden')),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              await ref.read(usuariosProvider.notifier).cambiarPassword(u.id, pwd);
+              final st = ref.read(usuariosProvider);
+              if (st.success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Contrase\u00f1a cambiada exitosamente')),
+                );
+                ref.read(usuariosProvider.notifier).resetSuccess();
+              } else if (st.error != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(st.error!), backgroundColor: Colors.red),
+                );
+                ref.read(usuariosProvider.notifier).resetError();
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            child: const Text('Cambiar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmarDesactivar(BuildContext context, Usuario u) {
     showDialog(
       context: context,
@@ -416,7 +490,7 @@ class _GestionUsuariosPageState extends ConsumerState<GestionUsuariosPage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(usuariosProvider.notifier).desactivarEmpleado(u.id);
+              await ref.read(usuariosProvider.notifier).desactivarEmpleado(u.id, reactivar: _mostrarInactivos);
               final state = ref.read(usuariosProvider);
               if (state.success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -544,6 +618,7 @@ class _UserCard extends StatelessWidget {
   final VoidCallback onDesactivar;
   final VoidCallback onVerDetalle;
   final VoidCallback onEditar;
+  final VoidCallback onCambiarPassword;
 
   const _UserCard({
     required this.usuario,
@@ -552,6 +627,7 @@ class _UserCard extends StatelessWidget {
     required this.onDesactivar,
     required this.onVerDetalle,
     required this.onEditar,
+    required this.onCambiarPassword,
   });
 
   @override
@@ -684,6 +760,15 @@ class _UserCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              child: _ActionButton(
+                icon: Icons.key,
+                label: 'Cambiar Contrase\u00f1a',
+                onTap: onCambiarPassword,
+              ),
             ),
           ],
         ),

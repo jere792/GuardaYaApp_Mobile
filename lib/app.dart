@@ -9,6 +9,7 @@ import 'package:guardaya_app/presentation/pages/ventas/registrar_venta_page.dart
 import 'package:guardaya_app/presentation/pages/ventas/venta_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/ventas/ventas_list_page.dart';
 import 'package:guardaya_app/presentation/pages/perfil/perfil_page.dart';
+import 'package:guardaya_app/presentation/pages/admin/dashboard_page.dart';
 import 'package:guardaya_app/presentation/pages/empresas/empresa_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/empresas/empresa_form_page.dart';
 import 'package:guardaya_app/presentation/pages/empresas/empresas_list_page.dart';
@@ -62,6 +63,7 @@ const Map<String, List<String>> _routeRoles = {
   '/reportes': ['super_admin', 'admin', 'empleado'],
   '/admin/usuarios': ['super_admin'],
   '/admin/usuarios/crear': ['super_admin'],
+  '/admin/dashboard': ['super_admin'],
   '/admin/empresas': ['super_admin'],
   '/admin/empresas/crear': ['super_admin'],
   '/admin/empresas/:id': ['super_admin'],
@@ -101,12 +103,23 @@ bool _isRouteAllowed(String route, String? rol) {
   return allowed != null && allowed.contains(rol);
 }
 
+class _AuthRedirectNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+final authRedirectNotifier = _AuthRedirectNotifier();
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  ref.listen<AuthState>(authProvider, (prev, next) {
+    if (prev?.isAuthenticated != next.isAuthenticated) {
+      authRedirectNotifier.notify();
+    }
+  });
 
   return GoRouter(
+    refreshListenable: authRedirectNotifier,
     initialLocation: '/login',
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final isAuthenticated = authState.isAuthenticated;
       final isLoginRoute = state.matchedLocation == '/login';
       final isCrearUsuariosRoute = state.matchedLocation == '/crear-usuarios';
@@ -145,6 +158,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/empleados/editar/:id',
         builder: (context, state) => EmpleadoEditPage(empleadoId: state.pathParameters['id']!),
       ),
+      GoRoute(path: '/admin/dashboard', builder: (context, state) => const DashboardPage()),
       GoRoute(path: '/admin/usuarios', builder: (context, state) => const GestionUsuariosPage()),
       GoRoute(path: '/admin/usuarios/crear', builder: (context, state) => const CrearUsuarioPage()),
       GoRoute(path: '/admin/empresas', builder: (context, state) => const EmpresasListPage()),

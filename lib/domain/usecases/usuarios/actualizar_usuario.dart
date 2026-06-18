@@ -13,6 +13,7 @@ class ActualizarUsuario implements UseCase<void, ActualizarUsuarioParams> {
       userId: params.userId,
       nombre: params.nombre,
       username: params.username,
+      apellidos: params.apellidos,
       email: params.email,
       telefono: params.telefono,
       rolNombre: params.rolNombre,
@@ -24,6 +25,7 @@ class ActualizarUsuarioParams {
   final String userId;
   final String nombre;
   final String username;
+  final String? apellidos;
   final String? email;
   final String? telefono;
   final String rolNombre;
@@ -32,6 +34,7 @@ class ActualizarUsuarioParams {
     required this.userId,
     required this.nombre,
     required this.username,
+    this.apellidos,
     this.email,
     this.telefono,
     required this.rolNombre,

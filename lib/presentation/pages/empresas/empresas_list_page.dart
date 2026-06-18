@@ -282,8 +282,28 @@ class _EmpresaCard extends StatelessWidget {
                         )),
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(empresa.rucDni ?? empresa.plan,
-                          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                      child: Row(
+                        children: [
+                          if (empresa.rucDni != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                empresa.rucDni!.length == 11 ? 'RUC' : 'DNI',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primary),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            empresa.rucDni ?? empresa.plan,
+                            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

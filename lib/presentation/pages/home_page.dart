@@ -349,15 +349,17 @@ class EmpleadoView extends StatelessWidget {
         isOffline: isOffline,
         sections: [
           _Section(title: 'Ventas', items: [
+            _MenuCard(icon: Icons.list, title: 'Lista de Ventas', subtitle: 'Ver todas las ventas', onTap: () => context.push('/ventas')),
             _MenuCard(
                 icon: Icons.add_circle,
                 title: 'Registrar Venta',
                 subtitle: 'Nueva venta con OCR',
                 onTap: () => context.push('/ventas/registrar')),
-            _MenuCard(
-                icon: Icons.search, title: 'Buscar Venta', subtitle: 'Por código o teléfono', onTap: () => context.push('/ventas/buscar')),
-            _MenuCard(icon: Icons.list, title: 'Lista de Ventas', subtitle: 'Ver todas las ventas', onTap: () => context.push('/ventas')),
-            _MenuCard(icon: Icons.receipt_long, title: 'Mis Ventas', subtitle: 'Historial personal', isEnabled: false),
+          ]),
+          _Section(title: 'Gestión', items: [
+            _MenuCard(icon: Icons.inventory_2, title: 'Productos', subtitle: 'Inventario y stock', onTap: () => context.push('/productos')),
+            _MenuCard(icon: Icons.category, title: 'Categorías', subtitle: 'Gestionar categorías', onTap: () => context.push('/categorias')),
+            _MenuCard(icon: Icons.people_outline, title: 'Clientes', subtitle: 'Gestionar clientes', onTap: () => context.push('/clientes')),
           ]),
         ]);
   }

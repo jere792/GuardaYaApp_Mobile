@@ -25,7 +25,6 @@ import 'package:guardaya_app/presentation/pages/categorias/categorias_list_page.
 import 'package:guardaya_app/presentation/pages/clientes/cliente_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/clientes/cliente_form_page.dart';
 import 'package:guardaya_app/presentation/pages/clientes/clientes_list_page.dart';
-import 'package:guardaya_app/presentation/pages/crear_usuario_temp_page.dart';
 import 'package:guardaya_app/presentation/pages/productos/producto_detail_page.dart';
 import 'package:guardaya_app/presentation/pages/productos/producto_form_page.dart';
 import 'package:guardaya_app/presentation/pages/productos/productos_list_page.dart';
@@ -213,7 +212,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ProductoFormPage(productoId: state.pathParameters['id']!),
       ),
       GoRoute(path: '/reportes', builder: (context, state) => const ReportesPage()),
-      GoRoute(path: '/crear-usuarios', builder: (context, state) => const CrearUsuarioTempPage()),
     ],
   );
 });

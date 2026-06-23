@@ -15,6 +15,7 @@ class VentaModel {
   final String estado;
   final String? imagenYapeUrl;
   final String? imagenEntregaUrl;
+  final String? tipoTransferenciaId;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -33,6 +34,7 @@ class VentaModel {
     required this.estado,
     this.imagenYapeUrl,
     this.imagenEntregaUrl,
+    this.tipoTransferenciaId,
     required this.createdAt,
     this.updatedAt,
   });
@@ -53,6 +55,7 @@ class VentaModel {
       estado: json['estado'] ?? 'pendiente',
       imagenYapeUrl: json['imagen_yape_url'],
       imagenEntregaUrl: json['imagen_entrega_url'],
+      tipoTransferenciaId: json['tipo_transferencia_id'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
     );
@@ -73,6 +76,7 @@ class VentaModel {
       'estado': estado,
       'imagen_yape_url': imagenYapeUrl,
       'imagen_entrega_url': imagenEntregaUrl,
+      'tipo_transferencia_id': tipoTransferenciaId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -92,6 +96,7 @@ class VentaModel {
     estado: estado,
     imagenYapeUrl: imagenYapeUrl,
     imagenEntregaUrl: imagenEntregaUrl,
+    tipoTransferenciaId: tipoTransferenciaId,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );
@@ -111,6 +116,7 @@ class VentaModel {
     estado: entity.estado,
     imagenYapeUrl: entity.imagenYapeUrl,
     imagenEntregaUrl: entity.imagenEntregaUrl,
+    tipoTransferenciaId: entity.tipoTransferenciaId,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   );

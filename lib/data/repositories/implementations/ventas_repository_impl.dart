@@ -47,6 +47,7 @@ class VentasRepositoryImpl implements VentasRepository {
           descripcion: venta.descripcion,
           productos: venta.productos,
           estado: venta.estado,
+          tipoTransferenciaId: venta.tipoTransferenciaId,
           createdAt: venta.createdAt.toIso8601String(),
         );
         await _local.insertPendingVenta(pending);
@@ -140,6 +141,7 @@ class VentasRepositoryImpl implements VentasRepository {
         fechaYape: p.fechaYape != null ? DateTime.tryParse(p.fechaYape!) : null,
         descripcion: p.descripcion,
         estado: p.estado,
+        tipoTransferenciaId: p.tipoTransferenciaId,
         createdAt: DateTime.tryParse(p.createdAt) ?? DateTime.now(),
       )).toList());
     } catch (e) {
@@ -169,6 +171,7 @@ class VentasRepositoryImpl implements VentasRepository {
             fechaYape: p.fechaYape != null ? DateTime.tryParse(p.fechaYape!) : null,
             descripcion: p.descripcion,
             estado: p.estado,
+            tipoTransferenciaId: p.tipoTransferenciaId,
             createdAt: DateTime.tryParse(p.createdAt) ?? DateTime.now(),
           );
           final data = await _remote.registrarVenta(model.toJson());

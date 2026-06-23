@@ -15,6 +15,7 @@ class PendingVentaModel {
   final String estado;
   final String? imagenYapeLocalPath;
   final String? imagenEntregaLocalPath;
+  final String? tipoTransferenciaId;
   final String createdAt;
   final String syncStatus;
   final String? syncError;
@@ -35,6 +36,7 @@ class PendingVentaModel {
     this.estado = 'pendiente',
     this.imagenYapeLocalPath,
     this.imagenEntregaLocalPath,
+    this.tipoTransferenciaId,
     required this.createdAt,
     this.syncStatus = AppConstants.pendingStatus,
     this.syncError,
@@ -57,6 +59,7 @@ class PendingVentaModel {
       estado: map['estado'] ?? 'pendiente',
       imagenYapeLocalPath: map['imagen_yape_local_path'],
       imagenEntregaLocalPath: map['imagen_entrega_local_path'],
+      tipoTransferenciaId: map['tipo_transferencia_id'],
       createdAt: map['created_at'] ?? DateTime.now().toIso8601String(),
       syncStatus: map['sync_status'] ?? AppConstants.pendingStatus,
       syncError: map['sync_error'],
@@ -80,6 +83,7 @@ class PendingVentaModel {
       'estado': estado,
       'imagen_yape_local_path': imagenYapeLocalPath,
       'imagen_entrega_local_path': imagenEntregaLocalPath,
+      'tipo_transferencia_id': tipoTransferenciaId,
       'created_at': createdAt,
       'sync_status': syncStatus,
       'sync_error': syncError,

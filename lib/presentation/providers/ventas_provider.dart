@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/data/datasources/local/db/pending_ventas_dao.dart';
 import 'package:guardaya_app/data/datasources/remote/ventas_datasource.dart';
 import 'package:guardaya_app/data/repositories/implementations/ventas_repository_impl.dart';
+import 'package:guardaya_app/domain/entities/tipo_transferencia.dart';
 import 'package:guardaya_app/domain/entities/venta.dart';
 import 'package:guardaya_app/domain/repositories/ventas_repository.dart';
 import 'package:guardaya_app/domain/usecases/ventas/buscar_venta_por_codigo.dart';
@@ -12,6 +13,15 @@ import 'package:guardaya_app/domain/usecases/ventas/obtener_ventas_por_fecha.dar
 import 'package:guardaya_app/domain/usecases/ventas/obtener_ventas_por_rango.dart';
 import 'package:guardaya_app/domain/usecases/ventas/registrar_venta.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
+import 'package:guardaya_app/services/supabase_service.dart';
+
+final tiposTransferenciaProvider = FutureProvider<List<TipoTransferencia>>((ref) async {
+  final response = await SupabaseService.from('tipos_transferencia')
+      .select()
+      .eq('activo', true)
+      .order('nombre', ascending: true);
+  return (response as List).map((e) => TipoTransferencia.fromJson(e as Map<String, dynamic>)).toList();
+});
 
 final ventasProvider = StateNotifierProvider<VentasNotifier, VentasState>((ref) {
   return VentasNotifier(

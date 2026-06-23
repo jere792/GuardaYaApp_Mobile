@@ -15,6 +15,7 @@ class Venta extends Equatable {
   final String estado;
   final String? imagenYapeUrl;
   final String? imagenEntregaUrl;
+  final String? tipoTransferenciaId;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -33,6 +34,7 @@ class Venta extends Equatable {
     required this.estado,
     this.imagenYapeUrl,
     this.imagenEntregaUrl,
+    this.tipoTransferenciaId,
     required this.createdAt,
     this.updatedAt,
   });
@@ -52,6 +54,7 @@ class Venta extends Equatable {
     String? estado,
     String? imagenYapeUrl,
     String? imagenEntregaUrl,
+    String? tipoTransferenciaId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -70,6 +73,7 @@ class Venta extends Equatable {
       estado: estado ?? this.estado,
       imagenYapeUrl: imagenYapeUrl ?? this.imagenYapeUrl,
       imagenEntregaUrl: imagenEntregaUrl ?? this.imagenEntregaUrl,
+      tipoTransferenciaId: tipoTransferenciaId ?? this.tipoTransferenciaId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -79,6 +83,6 @@ class Venta extends Equatable {
   List<Object?> get props => [
     id, empresaId, usuarioId, clienteId, codigoYape, monto,
     clienteNombre, clienteTelefono, fechaYape, descripcion, productos, estado,
-    imagenYapeUrl, imagenEntregaUrl, createdAt, updatedAt,
+    imagenYapeUrl, imagenEntregaUrl, tipoTransferenciaId, createdAt, updatedAt,
   ];
 }

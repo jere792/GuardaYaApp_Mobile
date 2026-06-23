@@ -17,7 +17,9 @@ import 'package:guardaya_app/data/datasources/local/db/pending_ventas_dao.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:guardaya_app/domain/entities/cliente.dart';
+import 'package:guardaya_app/domain/entities/tipo_transferencia.dart';
 import 'package:guardaya_app/presentation/providers/clientes_provider.dart';
+import 'package:guardaya_app/presentation/providers/ventas_provider.dart';
 import 'package:guardaya_app/domain/entities/producto.dart';
 import 'package:guardaya_app/presentation/providers/productos_provider.dart';
 
@@ -58,6 +60,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   final _descripcionController = TextEditingController();
 
   String _tipoTransferencia = 'Yape';
+  String? _tipoTransferenciaId;
+  List<TipoTransferencia> _tiposCargados = [];
   final List<String> _tiposTransferencia = ['Yape', 'Plin', 'Transferencia', 'Efectivo', 'Otro'];
 
   final List<ProductoVenta> _productos = [];
@@ -353,6 +357,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         productos: productosJson != null ? jsonEncode(productosJson) : null,
         estado: 'pendiente',
         imagenYapeLocalPath: _comprobanteImage?.path,
+        tipoTransferenciaId: _tipoTransferenciaId,
         createdAt: DateTime.now().toIso8601String(),
       );
 
@@ -451,6 +456,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       _ocrResult = null;
       _ocrConfidence = 0;
       _currentStep = 0;
+      _tipoTransferencia = 'Yape';
+      _tipoTransferenciaId = null;
       _codigoController.clear();
       _montoController.clear();
       _fechaController.clear();
@@ -678,7 +685,11 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               final icon = icons[tipo] ?? Icons.payment;
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _tipoTransferencia = tipo),
+                  onTap: () => setState(() {
+                    _tipoTransferencia = tipo;
+                    final encontrado = _tiposCargados.where((t) => t.nombre == tipo).firstOrNull;
+                    _tipoTransferenciaId = encontrado?.id;
+                  }),
                   child: Container(
                     height: 90,
                     margin: EdgeInsets.only(
@@ -723,6 +734,15 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   Widget _buildStep1() {
     final cs = Theme.of(context).colorScheme;
     final isEfectivo = _tipoTransferencia == 'Efectivo';
+
+    final tiposAsync = ref.watch(tiposTransferenciaProvider);
+    tiposAsync.whenData((tipos) {
+      if (_tiposCargados != tipos) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          setState(() => _tiposCargados = tipos);
+        });
+      }
+    });
 
     const tipoIcons = {
       'Yape': Icons.account_balance,

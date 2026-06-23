@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
+import 'package:guardaya_app/domain/entities/tipo_transferencia.dart';
 import 'package:guardaya_app/domain/entities/venta.dart';
 import 'package:guardaya_app/presentation/providers/ventas_provider.dart';
 import 'package:intl/intl.dart';
@@ -45,6 +46,7 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
     final ventasState = ref.watch(ventasProvider);
     final venta = ventasState.ventaSeleccionada;
     final currencyFormat = NumberFormat.currency(locale: 'es_PE', symbol: 'S/', decimalDigits: 2);
+    final tiposAsync = ref.watch(tiposTransferenciaProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -56,11 +58,11 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
-      body: _buildBody(venta, ventasState, currencyFormat),
+      body: _buildBody(venta, ventasState, currencyFormat, tiposAsync),
     );
   }
 
-  Widget _buildBody(Venta? venta, VentasState state, NumberFormat currencyFormat) {
+  Widget _buildBody(Venta? venta, VentasState state, NumberFormat currencyFormat, AsyncValue<List<TipoTransferencia>> tiposAsync) {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
@@ -140,6 +142,8 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
               _detailRow(Icons.qr_code, 'Código de operación', venta.codigoYape!),
             if (venta.fechaYape != null)
               _detailRow(Icons.calendar_today, 'Fecha Yape', DateFormat('dd/MM/yyyy').format(venta.fechaYape!)),
+            if (venta.tipoTransferenciaId != null)
+              _buildTipoTransferenciaRow(venta.tipoTransferenciaId!, tiposAsync),
           ],
         ),
         const SizedBox(height: 12),
@@ -278,5 +282,12 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildTipoTransferenciaRow(String tipoId, AsyncValue<List<TipoTransferencia>> tiposAsync) {
+    final tipos = tiposAsync.asData?.value ?? [];
+    final tipo = tipos.where((t) => t.id == tipoId).firstOrNull;
+    final nombre = tipo?.nombre ?? tipoId;
+    return _detailRow(Icons.payment, 'Tipo pago', nombre);
   }
 }

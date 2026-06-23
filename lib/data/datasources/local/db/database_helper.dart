@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -44,6 +44,7 @@ class DatabaseHelper {
         estado TEXT DEFAULT 'pendiente',
         imagen_yape_local_path TEXT,
         imagen_entrega_local_path TEXT,
+        tipo_transferencia_id TEXT,
         created_at TEXT,
         sync_status TEXT DEFAULT 'pending',
         sync_error TEXT,
@@ -94,6 +95,9 @@ class DatabaseHelper {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 3) {
       await db.execute('ALTER TABLE pending_ventas ADD COLUMN productos TEXT');
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE pending_ventas ADD COLUMN tipo_transferencia_id TEXT');
     }
   }
 

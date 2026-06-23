@@ -863,9 +863,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               borderRadius: BorderRadius.circular(16),
               child: Image.file(
                 _comprobanteImage!,
-                height: 220,
+                height: 320,
                 width: double.infinity,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 12),

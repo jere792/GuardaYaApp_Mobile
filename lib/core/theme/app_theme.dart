@@ -4,10 +4,10 @@ import 'package:guardaya_app/core/theme/app_colors.dart';
 class AppTheme {
   static final Color _surfaceLight = AppColors.surface;
 
-  // Dark mode: fondo azulado para home/módulos (login usa AppColors.darkBg)
-  static final Color _bgDark = const Color(0xFF1A1A2E);
-  static final Color _surfaceDark = const Color(0xFF2E2E2E);
-  static final Color _appbarDark = const Color(0xFF15152A);
+  // Dark mode: fondo oscuro neutro para mejor contraste
+  static final Color _bgDark = const Color(0xFF0D0D0D);
+  static final Color _surfaceDark = const Color(0xFF1C1C1C);
+  static final Color _appbarDark = const Color(0xFF141414);
 
   static final ColorScheme _lightScheme = ColorScheme.fromSeed(
     seedColor: AppColors.primary,

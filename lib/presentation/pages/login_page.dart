@@ -34,13 +34,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
+          ),
+        );
     _animationController.forward();
   }
 
@@ -68,16 +68,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
       }
       return;
     }
-    
+
     debugPrint('Login: username=$username, password=${password.length} chars');
 
     if (mounted) {
       setState(() => _isLoading = true);
     }
     _focusNode.unfocus();
-    
-    debugPrint('Login attempt: username=$username, passwordLength=${password.length}');
-    
+
+    debugPrint(
+      'Login attempt: username=$username, passwordLength=${password.length}',
+    );
+
     try {
       await ref.read(authProvider.notifier).login(username, password);
     } catch (e) {
@@ -99,13 +101,19 @@ class _LoginPageState extends ConsumerState<LoginPage>
   String _getFriendlyError(String? error) {
     if (error == null) return 'Usuario o contraseña incorrectos';
     final e = error.toLowerCase();
-    if (e.contains('invalid') || e.contains('credentials') || e.contains('login')) {
+    if (e.contains('invalid') ||
+        e.contains('credentials') ||
+        e.contains('login')) {
       return 'Usuario o contraseña incorrectos';
     }
-    if (e.contains('no se encontr') || e.contains('not found') || e.contains('no existe')) {
+    if (e.contains('no se encontr') ||
+        e.contains('not found') ||
+        e.contains('no existe')) {
       return 'El usuario no existe';
     }
-    if (e.contains('inactivo') || e.contains('disabled') || e.contains('activo')) {
+    if (e.contains('inactivo') ||
+        e.contains('disabled') ||
+        e.contains('activo')) {
       return 'La cuenta está desactivada';
     }
     return error;
@@ -115,13 +123,17 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider);
     final size = MediaQuery.of(context).size;
-    
+
     final screenHeight = size.height;
     final isCompact = screenHeight < 680;
     final isTall = screenHeight > 800;
 
     final bgGradient = isDarkMode
-        ? const [AppColors.darkBgGradient1, AppColors.darkBgGradient2, AppColors.darkBgGradient3]
+        ? const [
+            AppColors.darkBgGradient1,
+            AppColors.darkBgGradient2,
+            AppColors.darkBgGradient3,
+          ]
         : const [AppColors.surface, AppColors.surface, AppColors.surface];
 
     final footerColor = isDarkMode
@@ -133,7 +145,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
     final cardTextSecondary = AppColors.textOnLight.withOpacity(0.6);
     final cardDividerColor = AppColors.textOnLight.withOpacity(0.1);
     final fieldBgColor = AppColors.surface;
-    final fieldBorderColor = isDarkMode ? AppColors.borderDark : AppColors.borderLight;
+    final fieldBorderColor = isDarkMode
+        ? AppColors.borderDark
+        : AppColors.borderLight;
     final fieldTextColor = AppColors.textOnLight;
     final fieldHintColor = AppColors.textOnLight.withOpacity(0.4);
     final fieldIconColor = AppColors.textOnLight.withOpacity(0.5);
@@ -270,25 +284,17 @@ class _LoginPageState extends ConsumerState<LoginPage>
       return TextField(
         controller: controller,
         obscureText: isPassword ? _obscurePassword : false,
-        textInputAction: isPassword ? TextInputAction.done : TextInputAction.next,
+        textInputAction: isPassword
+            ? TextInputAction.done
+            : TextInputAction.next,
         onSubmitted: (_) => onSubmitted(),
-        style: TextStyle(
-          color: fieldTextColor,
-          fontSize: 15,
-        ),
+        style: TextStyle(color: fieldTextColor, fontSize: 15),
         decoration: InputDecoration(
           filled: true,
           fillColor: fieldBgColor,
           hintText: hint,
-          hintStyle: TextStyle(
-            color: fieldHintColor,
-            fontSize: 15,
-          ),
-          prefixIcon: Icon(
-            icon,
-            color: fieldIconColor,
-            size: 22,
-          ),
+          hintStyle: TextStyle(color: fieldHintColor, fontSize: 15),
+          prefixIcon: Icon(icon, color: fieldIconColor, size: 22),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
@@ -326,10 +332,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         SizedBox(height: topSpacing),
         FadeTransition(
           opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: buildLogo(),
-          ),
+          child: SlideTransition(position: _slideAnimation, child: buildLogo()),
         ),
         SizedBox(height: isCompact ? 6.0 : 12.0),
         FadeTransition(
@@ -365,10 +368,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 Text(
                   'Inicia sesión en tu cuenta',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: cardTextSecondary,
-                  ),
+                  style: TextStyle(fontSize: 14, color: cardTextSecondary),
                 ),
                 SizedBox(height: dividerSpacing),
                 Row(
@@ -431,10 +431,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        height: 1,
-                        color: cardDividerColor,
-                      ),
+                      child: Container(height: 1, color: cardDividerColor),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -447,10 +444,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       ),
                     ),
                     Expanded(
-                      child: Container(
-                        height: 1,
-                        color: cardDividerColor,
-                      ),
+                      child: Container(height: 1, color: cardDividerColor),
                     ),
                   ],
                 ),
@@ -459,17 +453,16 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      isDarkMode ? Icons.brightness_6_outlined : Icons.brightness_5_outlined,
+                      isDarkMode
+                          ? Icons.brightness_6_outlined
+                          : Icons.brightness_5_outlined,
                       size: 16,
                       color: cardTextSecondary,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       isDarkMode ? 'Light Mode' : 'Dark Mode',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: cardTextSecondary,
-                      ),
+                      style: TextStyle(fontSize: 13, color: cardTextSecondary),
                     ),
                     const SizedBox(width: 8),
                     Switch(
@@ -492,10 +485,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           opacity: _fadeAnimation,
           child: Text(
             'GuardaYa v1.0',
-            style: TextStyle(
-              color: footerColor,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: footerColor, fontSize: 12),
           ),
         ),
         SizedBox(height: isCompact ? 2.0 : 6.0),

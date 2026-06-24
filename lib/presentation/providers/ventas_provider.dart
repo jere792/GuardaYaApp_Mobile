@@ -214,8 +214,11 @@ class VentasNotifier extends StateNotifier<VentasState> {
       },
     );
 
-    final pending = await _pendingDao.getPendingVentas();
-    final pendingVentas = pending.map((p) => _pendingToVenta(p)).toList();
+    final allPending = await _pendingDao.getAllPendingVentas();
+    final notSynced = allPending.where((p) => p.syncStatus != 'synced').toList();
+    final pendingToShow = allPending.where((p) => p.syncStatus == 'pending' || p.syncStatus == 'error').toList();
+    final pendingVentas = pendingToShow.map((p) => _pendingToVenta(p)).toList();
+    final idsNotSynced = notSynced.map((p) => p.id).toSet();
 
     if (errorMsg != null) {
       final map = <String, Venta>{};
@@ -226,6 +229,8 @@ class VentasNotifier extends StateNotifier<VentasState> {
         isLoading: false,
         ventas: map.values.toList(),
         showOfflineMessage: true,
+        pendingCount: notSynced.length,
+        pendingSyncIds: idsNotSynced,
       );
     } else {
       final map = <String, Venta>{};
@@ -237,9 +242,13 @@ class VentasNotifier extends StateNotifier<VentasState> {
           map[v.id] = v;
         }
       }
-      state = state.copyWith(isLoading: false, ventas: map.values.toList());
+      state = state.copyWith(
+        isLoading: false,
+        ventas: map.values.toList(),
+        pendingCount: notSynced.length,
+        pendingSyncIds: idsNotSynced,
+      );
     }
-    loadPendingCount();
   }
 
   Future<void> buscarPorCodigo(String empresaId, String codigo) async {
@@ -330,8 +339,14 @@ class VentasNotifier extends StateNotifier<VentasState> {
         }
       }
 
-      state = state.copyWith(isLoading: false, ventas: resultados);
-      loadPendingCount();
+      final all = await _pendingDao.getAllPendingVentas();
+      final notSynced = all.where((p) => p.syncStatus != 'synced').toList();
+      state = state.copyWith(
+        isLoading: false,
+        ventas: resultados,
+        pendingCount: notSynced.length,
+        pendingSyncIds: notSynced.map((p) => p.id).toSet(),
+      );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

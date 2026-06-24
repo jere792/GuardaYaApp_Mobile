@@ -110,4 +110,16 @@ class VentasDatasource {
       operation: 'cambiarEstadoVenta',
     );
   }
+
+  Future<Map<String, dynamic>> actualizarVenta(String id, Map<String, dynamic> data) async {
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single(),
+      operation: 'actualizarVenta',
+    );
+    return response;
+  }
 }

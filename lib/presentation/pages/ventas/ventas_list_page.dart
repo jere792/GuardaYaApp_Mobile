@@ -138,52 +138,58 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       color: AppColors.primary.withOpacity(0.08),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _filterField(controller: _codigoController, hint: 'Código de operación', icon: Icons.qr_code)),
-              const SizedBox(width: 8),
-              Expanded(child: _filterField(controller: _telefonoController, hint: 'Teléfono', icon: Icons.phone, keyboardType: TextInputType.phone)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _filterField(controller: _nombreController, hint: 'Nombre del cliente', icon: Icons.person),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(child: _dateChip(label: _fechaInicio != null ? DateFormat('dd/MM/yyyy').format(_fechaInicio!) : 'Fecha inicio', onTap: () => _seleccionarFecha(inicio: true))),
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward, size: 16)),
-              Expanded(child: _dateChip(label: _fechaFin != null ? DateFormat('dd/MM/yyyy').format(_fechaFin!) : 'Fecha fin', onTap: () => _seleccionarFecha(inicio: false))),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 40,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(child: _filterField(controller: _codigoController, hint: 'Código de operación', icon: Icons.qr_code)),
+                const SizedBox(width: 8),
+                Expanded(child: _filterField(controller: _telefonoController, hint: 'Teléfono', icon: Icons.phone, keyboardType: TextInputType.phone)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _filterField(controller: _nombreController, hint: 'Nombre del cliente', icon: Icons.person),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(child: _dateChip(label: _fechaInicio != null ? DateFormat('dd/MM/yyyy').format(_fechaInicio!) : 'Fecha inicio', onTap: () => _seleccionarFecha(inicio: true))),
+                const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward, size: 16)),
+                Expanded(child: _dateChip(label: _fechaFin != null ? DateFormat('dd/MM/yyyy').format(_fechaFin!) : 'Fecha fin', onTap: () => _seleccionarFecha(inicio: false))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
                   child: ElevatedButton.icon(
                     onPressed: _buscar,
                     icon: const Icon(Icons.search, size: 18),
                     label: const Text('Buscar'),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 40,
-                child: OutlinedButton.icon(
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
                   onPressed: _limpiarFiltros,
                   icon: const Icon(Icons.clear, size: 18),
                   label: const Text('Limpiar'),
-                  style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), foregroundColor: colorScheme.onSurfaceVariant),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    foregroundColor: colorScheme.onSurfaceVariant,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -191,7 +197,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
   Widget _filterField({required TextEditingController controller, required String hint, required IconData icon, TextInputType keyboardType = TextInputType.text}) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      height: 40,
+      constraints: const BoxConstraints(minHeight: 44),
       decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: colorScheme.outlineVariant)),
       child: TextField(
         controller: controller,
@@ -202,7 +208,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
           hintStyle: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
           prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
       ),
     );
@@ -213,7 +219,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 40,
+        constraints: const BoxConstraints(minHeight: 44),
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: colorScheme.outlineVariant)),
         child: Row(

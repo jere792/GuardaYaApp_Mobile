@@ -82,6 +82,20 @@ class VentaModel {
     };
   }
 
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      if (clienteId != null) 'cliente_id': clienteId,
+      if (codigoYape != null) 'codigo_yape': codigoYape,
+      'monto': monto,
+      if (clienteNombre != null) 'cliente_nombre': clienteNombre,
+      if (clienteTelefono != null) 'cliente_telefono': clienteTelefono,
+      if (fechaYape != null) 'fecha_yape': fechaYape?.toIso8601String(),
+      if (descripcion != null) 'descripcion': descripcion,
+      if (tipoTransferenciaId != null) 'tipo_transferencia_id': tipoTransferenciaId,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
   Venta toEntity() => Venta(
     id: id,
     empresaId: empresaId,

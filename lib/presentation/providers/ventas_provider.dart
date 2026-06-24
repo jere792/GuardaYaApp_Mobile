@@ -11,6 +11,7 @@ import 'package:guardaya_app/domain/usecases/ventas/cambiar_estado_venta.dart';
 import 'package:guardaya_app/domain/usecases/ventas/obtener_venta_por_id.dart';
 import 'package:guardaya_app/domain/usecases/ventas/obtener_ventas_por_fecha.dart';
 import 'package:guardaya_app/domain/usecases/ventas/obtener_ventas_por_rango.dart';
+import 'package:guardaya_app/domain/usecases/ventas/actualizar_venta.dart';
 import 'package:guardaya_app/domain/usecases/ventas/registrar_venta.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
@@ -26,6 +27,7 @@ final tiposTransferenciaProvider = FutureProvider<List<TipoTransferencia>>((ref)
 final ventasProvider = StateNotifierProvider<VentasNotifier, VentasState>((ref) {
   return VentasNotifier(
     registrar: ref.watch(registrarVentaProvider),
+    actualizar: ref.watch(actualizarVentaProvider),
     obtenerPorFecha: ref.watch(obtenerVentasPorFechaProvider),
     buscarPorCodigo: ref.watch(buscarPorCodigoProvider),
     buscarPorTelefono: ref.watch(buscarPorTelefonoProvider),
@@ -51,6 +53,10 @@ final ventasRepositoryProvider = Provider<VentasRepository>((ref) {
 // Providers de usecases
 final registrarVentaProvider = Provider<RegistrarVenta>((ref) {
   return RegistrarVenta(ref.watch(ventasRepositoryProvider));
+});
+
+final actualizarVentaProvider = Provider<ActualizarVenta>((ref) {
+  return ActualizarVenta(ref.watch(ventasRepositoryProvider));
 });
 
 final obtenerVentasPorFechaProvider = Provider<ObtenerVentasPorFecha>((ref) {
@@ -107,6 +113,7 @@ class VentasState {
 
 class VentasNotifier extends StateNotifier<VentasState> {
   final RegistrarVenta _registrar;
+  final ActualizarVenta _actualizar;
   final ObtenerVentasPorFecha _obtenerPorFecha;
   final BuscarVentaPorCodigo _buscarPorCodigo;
   final BuscarVentaPorTelefono _buscarPorTelefono;
@@ -116,6 +123,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
 
   VentasNotifier({
     required RegistrarVenta registrar,
+    required ActualizarVenta actualizar,
     required ObtenerVentasPorFecha obtenerPorFecha,
     required BuscarVentaPorCodigo buscarPorCodigo,
     required BuscarVentaPorTelefono buscarPorTelefono,
@@ -123,6 +131,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
     required ObtenerVentaPorId obtenerPorId,
     required ObtenerVentasPorRango obtenerPorRango,
   })  : _registrar = registrar,
+        _actualizar = actualizar,
         _obtenerPorFecha = obtenerPorFecha,
         _buscarPorCodigo = buscarPorCodigo,
         _buscarPorTelefono = buscarPorTelefono,
@@ -146,6 +155,19 @@ class VentasNotifier extends StateNotifier<VentasState> {
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (venta) => state = state.copyWith(isLoading: false, ventas: [...state.ventas, venta]),
+    );
+  }
+
+  Future<void> actualizarVenta(Venta venta) async {
+    state = state.copyWith(isLoading: true, error: null);
+    final result = await _actualizar(ActualizarVentaParams(venta: venta));
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+      (ventaActualizada) {
+        state = state.copyWith(isLoading: false, ventaSeleccionada: ventaActualizada);
+        final updatedList = state.ventas.map((v) => v.id == ventaActualizada.id ? ventaActualizada : v).toList();
+        state = state.copyWith(ventas: updatedList);
+      },
     );
   }
 
@@ -209,7 +231,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
         );
         if (state.error != null) return;
       } else {
-        final inicio = fechaInicio ?? DateTime.now();
+        final inicio = fechaInicio ?? (nombre != null && nombre.isNotEmpty ? DateTime.now().subtract(const Duration(days: 180)) : DateTime.now());
         final fin = fechaFin ?? inicio;
         if (inicio == fin) {
           final result = await _obtenerPorFecha(ObtenerVentasParams(empresaId: empresaId, fecha: inicio));

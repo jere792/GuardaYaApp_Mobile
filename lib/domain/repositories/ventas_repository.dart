@@ -10,6 +10,7 @@ abstract class VentasRepository {
   Future<Either<Failure, List<Venta>>> buscarVentaPorNombre(String empresaId, String nombre);
   Future<Either<Failure, List<Venta>>> obtenerVentasPorRango(String empresaId, DateTime desde, DateTime hasta);
   Future<Either<Failure, Venta>> obtenerVentaPorId(String ventaId);
+  Future<Either<Failure, Venta>> actualizarVenta(Venta venta);
   Future<Either<Failure, void>> cambiarEstadoVenta(String ventaId, String nuevoEstado);
   Future<Either<Failure, List<Venta>>> obtenerVentasPendientesSync();
   Future<Either<Failure, void>> syncVentasPendientes();

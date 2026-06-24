@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/core/theme/app_colors.dart';
 import 'package:guardaya_app/domain/entities/tipo_transferencia.dart';
 import 'package:guardaya_app/domain/entities/venta.dart';
+import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/presentation/providers/ventas_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -41,6 +42,73 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
     }
   }
 
+  void _mostrarEditarVenta(BuildContext context, Venta venta) {
+    final nombreCtrl = TextEditingController(text: venta.clienteNombre ?? '');
+    final telefonoCtrl = TextEditingController(text: venta.clienteTelefono ?? '');
+    final descripcionCtrl = TextEditingController(text: venta.descripcion ?? '');
+    final montoCtrl = TextEditingController(text: venta.monto.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Editar Venta'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nombreCtrl,
+                decoration: const InputDecoration(labelText: 'Nombre del cliente', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: telefonoCtrl,
+                decoration: const InputDecoration(labelText: 'Teléfono', border: OutlineInputBorder()),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: montoCtrl,
+                decoration: const InputDecoration(labelText: 'Monto', border: OutlineInputBorder()),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descripcionCtrl,
+                decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              final monto = double.tryParse(montoCtrl.text.replaceAll(',', '.')) ?? venta.monto;
+              final updated = venta.copyWith(
+                clienteNombre: nombreCtrl.text.trim().isEmpty ? null : nombreCtrl.text.trim(),
+                clienteTelefono: telefonoCtrl.text.trim().isEmpty ? null : telefonoCtrl.text.trim(),
+                monto: monto,
+                descripcion: descripcionCtrl.text.trim().isEmpty ? null : descripcionCtrl.text.trim(),
+              );
+              Navigator.pop(ctx);
+              await ref.read(ventasProvider.notifier).actualizarVenta(updated);
+              if (mounted) {
+                ref.read(ventasProvider.notifier).obtenerVentaPorId(widget.ventaId);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Venta actualizada')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ventasState = ref.watch(ventasProvider);
@@ -57,6 +125,14 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
+        actions: [
+          if (venta != null && venta.estado == 'pendiente')
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => _mostrarEditarVenta(context, venta!),
+              tooltip: 'Editar venta',
+            ),
+        ],
       ),
       body: _buildBody(venta, ventasState, currencyFormat, tiposAsync),
     );

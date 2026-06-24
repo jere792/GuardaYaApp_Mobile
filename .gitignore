@@ -48,4 +48,6 @@ app.*.map.json
 .env
 
 
-supabase.sql
+db.sql
+
+doc

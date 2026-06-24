@@ -81,12 +81,20 @@ class UsuarioDatasource {
     required String rolNombre,
   }) async {
     try {
+      final roleResponse = await SupabaseService.withTimeout(
+        SupabaseService.from('roles')
+            .select('id')
+            .eq('nombre', rolNombre)
+            .maybeSingle(),
+        operation: 'buscarRolPorNombre',
+      );
+
       final updateData = <String, dynamic>{
         'nombre': nombre,
         'username': username,
-        'rol_nombre': rolNombre,
         'updated_at': DateTime.now().toIso8601String(),
       };
+      if (roleResponse != null) updateData['rol_id'] = roleResponse['id'];
       if (apellidos != null) updateData['apellidos'] = apellidos;
       if (email != null) updateData['email'] = email;
       if (telefono != null) updateData['telefono'] = telefono;

@@ -1075,7 +1075,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                 ],
               ),
             ),
-          ] else ...[
+          ] else if (!_isOffline) ...[
             // Search field
             TextField(
               controller: _clienteSearchController,
@@ -1165,6 +1165,22 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                 ),
               ),
             ),
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.wifi_off, color: Colors.orange, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Sin conexión a internet. Para asignar un cliente, conéctate a internet o continúa sin asignar uno.',
+                      style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
           const SizedBox(height: 12),
           _buildTextField(
@@ -1240,7 +1256,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
                 ],
               ),
             ),
-          ] else ...[
+          ] else if (!_isOffline) ...[
             // Search field
             TextField(
               controller: _productoSearchController,
@@ -1330,34 +1346,54 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _buildTextField(
-                  controller: _productoNombreController,
-                  label: 'Producto',
-                  icon: Icons.shopping_bag,
-                  readOnly: tieneProducto,
+          if (_isOffline && _productos.isEmpty && _productoSeleccionado == null) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.wifi_off, color: Colors.orange, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Sin conexión a internet. Para agregar productos, conéctate a internet o continúa sin agregar.',
+                      style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (!_isOffline) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildTextField(
+                    controller: _productoNombreController,
+                    label: 'Producto',
+                    icon: Icons.shopping_bag,
+                    readOnly: tieneProducto,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildTextField(
-                  controller: _productoPrecioController,
-                  label: 'Precio',
-                  icon: Icons.attach_money,
-                  keyboardType: TextInputType.number,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildTextField(
+                    controller: _productoPrecioController,
+                    label: 'Precio',
+                    icon: Icons.attach_money,
+                    keyboardType: TextInputType.number,
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: _addProducto,
-                icon: const Icon(Icons.add_circle, color: AppColors.success),
-                iconSize: 32,
-              ),
-            ],
-          ),
+                IconButton(
+                  onPressed: _addProducto,
+                  icon: const Icon(Icons.add_circle, color: AppColors.success),
+                  iconSize: 32,
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           if (_productos.isEmpty) ...[
             Container(

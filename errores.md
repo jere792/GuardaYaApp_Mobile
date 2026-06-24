@@ -15,6 +15,11 @@
 - **HomePage**: Banner amarillo *"Modo sin conexión. Las ventas se guardarán localmente."*
 - **HomePage**: Chip naranja con ícono `wifi_off` + texto "Offline".
 - **RegistrarVentaPage**: Chip naranja "Offline" en AppBar.
+- **VentasListPage**: Mensaje naranja al final del listado cuando hay datos locales pendientes.
+
+### ✅ Pasos de venta offline
+- **Paso 3 (Cliente)**: Muestra mensaje *"Sin conexión a internet. Para asignar un cliente, conéctate a internet o continúa sin asignar uno."* en vez del buscador.
+- **Paso 4 (Producto)**: Muestra mensaje *"Sin conexión a internet. Para agregar productos, conéctate a internet o continúa sin agregar."* en vez del buscador.
 
 ---
 
@@ -31,6 +36,9 @@
 - No verifica conectividad antes de intentar la llamada API.
 - Puede dar timeout largo antes de mostrar error.
 
+### ❌ Crear Cliente / Producto desde Registrar Venta
+- Los botones se ocultan cuando no hay internet y se muestra un mensaje offline.
+
 ---
 
 ## Problemas detectados
@@ -42,4 +50,3 @@
 5. **`connectivityProvider` inicia como `true`** (asume online) -- hay un período donde la app cree tener conexión cuando aún no verificó.
 6. **Máximo de reintentos inconsistente**: `app_constants.dart` define `maxRetrySync = 3` pero el código usa `10` hardcodeado.
 7. **Mensajes de error poco amigables**: Muestran excepciones crudas como *"PostgrestException: ..."* en vez de textos para el usuario.
-    

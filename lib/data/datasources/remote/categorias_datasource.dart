@@ -49,11 +49,11 @@ class CategoriasDatasource {
     }
   }
 
-  Future<void> desactivarCategoria(String id) async {
+  Future<void> desactivarCategoria(String id, {bool reactivar = false}) async {
     try {
       await SupabaseService.withTimeout(
         SupabaseService.from('categorias').update({
-          'activo': false,
+          'activo': reactivar,
           'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', id),
         operation: 'desactivarCategoria',

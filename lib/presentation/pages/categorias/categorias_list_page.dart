@@ -204,7 +204,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(categoriasProvider.notifier).desactivarCategoria(cat.id);
+              await ref.read(categoriasProvider.notifier).desactivarCategoria(cat.id, reactivar: !cat.activo);
               final st = ref.read(categoriasProvider);
               if (st.success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

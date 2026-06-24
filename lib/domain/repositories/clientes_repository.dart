@@ -8,5 +8,5 @@ abstract class ClientesRepository {
   Future<Either<Failure, Cliente?>> buscarClientePorTelefono(String empresaId, String telefono);
   Future<Either<Failure, Cliente>> crearCliente(Cliente cliente);
   Future<Either<Failure, Cliente>> actualizarCliente(Cliente cliente);
-  Future<Either<Failure, void>> desactivarCliente(String clienteId);
+  Future<Either<Failure, void>> desactivarCliente(String clienteId, {bool reactivar = false});
 }

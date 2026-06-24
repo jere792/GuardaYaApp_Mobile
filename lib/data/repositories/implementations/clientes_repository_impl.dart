@@ -94,9 +94,9 @@ class ClientesRepositoryImpl implements ClientesRepository {
   }
 
   @override
-  Future<Either<Failure, void>> desactivarCliente(String clienteId) async {
+  Future<Either<Failure, void>> desactivarCliente(String clienteId, {bool reactivar = false}) async {
     try {
-      await _datasource.desactivarCliente(clienteId);
+      await _datasource.desactivarCliente(clienteId, reactivar: reactivar);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

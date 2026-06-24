@@ -6,5 +6,5 @@ abstract class CategoriasRepository {
   Future<Either<Failure, List<Categoria>>> listarCategorias(String empresaId);
   Future<Either<Failure, Categoria>> crearCategoria(Categoria categoria);
   Future<Either<Failure, Categoria>> actualizarCategoria(Categoria categoria);
-  Future<Either<Failure, void>> desactivarCategoria(String categoriaId);
+  Future<Either<Failure, void>> desactivarCategoria(String categoriaId, {bool reactivar = false});
 }

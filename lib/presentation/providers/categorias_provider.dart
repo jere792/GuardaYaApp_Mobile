@@ -104,14 +104,14 @@ class CategoriasNotifier extends StateNotifier<CategoriasState> {
     );
   }
 
-  Future<void> desactivarCategoria(String categoriaId) async {
+  Future<void> desactivarCategoria(String categoriaId, {bool reactivar = false}) async {
     state = state.copyWith(isLoading: true, error: null, success: false);
-    final result = await _desactivar(DesactivarCategoriaParams(categoriaId: categoriaId));
+    final result = await _desactivar(DesactivarCategoriaParams(categoriaId: categoriaId, reactivar: reactivar));
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (_) {
         final updated = state.categorias.map((c) {
-          if (c.id == categoriaId) return c.copyWith(activo: false);
+          if (c.id == categoriaId) return c.copyWith(activo: reactivar);
           return c;
         }).toList();
         state = state.copyWith(isLoading: false, categorias: updated, success: true);

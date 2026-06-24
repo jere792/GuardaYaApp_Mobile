@@ -9,11 +9,12 @@ class DesactivarCliente implements UseCase<void, DesactivarClienteParams> {
 
   @override
   Future<Either<Failure, void>> call(DesactivarClienteParams params) async {
-    return await repository.desactivarCliente(params.clienteId);
+    return await repository.desactivarCliente(params.clienteId, reactivar: params.reactivar);
   }
 }
 
 class DesactivarClienteParams {
   final String clienteId;
-  DesactivarClienteParams({required this.clienteId});
+  final bool reactivar;
+  DesactivarClienteParams({required this.clienteId, this.reactivar = false});
 }

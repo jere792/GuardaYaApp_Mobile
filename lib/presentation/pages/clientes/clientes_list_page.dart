@@ -216,7 +216,7 @@ class _ClientesListPageState extends ConsumerState<ClientesListPage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(clientesProvider.notifier).desactivarCliente(c.id);
+              await ref.read(clientesProvider.notifier).desactivarCliente(c.id, reactivar: !c.activo);
               final st = ref.read(clientesProvider);
               if (st.success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

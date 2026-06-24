@@ -202,7 +202,7 @@ class _EmpleadosListPageState extends ConsumerState<EmpleadosListPage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(usuariosProvider.notifier).desactivarEmpleado(emp.id);
+              await ref.read(usuariosProvider.notifier).desactivarEmpleado(emp.id, reactivar: !emp.activo);
               final state = ref.read(usuariosProvider);
               if (state.success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

@@ -104,14 +104,14 @@ class ClientesNotifier extends StateNotifier<ClientesState> {
     );
   }
 
-  Future<void> desactivarCliente(String clienteId) async {
+  Future<void> desactivarCliente(String clienteId, {bool reactivar = false}) async {
     state = state.copyWith(isLoading: true, error: null, success: false);
-    final result = await _desactivar(DesactivarClienteParams(clienteId: clienteId));
+    final result = await _desactivar(DesactivarClienteParams(clienteId: clienteId, reactivar: reactivar));
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
       (_) {
         final updated = state.clientes.map((c) {
-          if (c.id == clienteId) return c.copyWith(activo: false);
+          if (c.id == clienteId) return c.copyWith(activo: reactivar);
           return c;
         }).toList();
         state = state.copyWith(isLoading: false, clientes: updated, success: true);

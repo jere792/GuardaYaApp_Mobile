@@ -67,9 +67,9 @@ class CategoriasRepositoryImpl implements CategoriasRepository {
   }
 
   @override
-  Future<Either<Failure, void>> desactivarCategoria(String categoriaId) async {
+  Future<Either<Failure, void>> desactivarCategoria(String categoriaId, {bool reactivar = false}) async {
     try {
-      await _datasource.desactivarCategoria(categoriaId);
+      await _datasource.desactivarCategoria(categoriaId, reactivar: reactivar);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

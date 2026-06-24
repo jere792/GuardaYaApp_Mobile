@@ -47,65 +47,95 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
     final telefonoCtrl = TextEditingController(text: venta.clienteTelefono ?? '');
     final descripcionCtrl = TextEditingController(text: venta.descripcion ?? '');
     final montoCtrl = TextEditingController(text: venta.monto.toString());
+    final codigoCtrl = TextEditingController(text: venta.codigoYape ?? '');
+    String? tipoTransferenciaId = venta.tipoTransferenciaId;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Editar Venta'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nombreCtrl,
-                decoration: const InputDecoration(labelText: 'Nombre del cliente', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: telefonoCtrl,
-                decoration: const InputDecoration(labelText: 'Teléfono', border: OutlineInputBorder()),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: montoCtrl,
-                decoration: const InputDecoration(labelText: 'Monto', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descripcionCtrl,
-                decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
-                maxLines: 2,
-              ),
-            ],
+      builder: (ctx) {
+        final tiposAsync = ref.watch(tiposTransferenciaProvider);
+        return AlertDialog(
+          title: const Text('Editar Venta'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nombreCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre del cliente', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: telefonoCtrl,
+                  decoration: const InputDecoration(labelText: 'Teléfono', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: codigoCtrl,
+                  decoration: const InputDecoration(labelText: 'Código de operación', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 12),
+                tiposAsync.when(
+                  data: (tipos) => DropdownButtonFormField<String?>(
+                    value: tipoTransferenciaId,
+                    decoration: const InputDecoration(labelText: 'Tipo de transferencia', border: OutlineInputBorder()),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('Sin tipo')),
+                      ...tipos.map((t) => DropdownMenuItem(value: t.id, child: Text(t.nombre))),
+                    ],
+                    onChanged: (v) => tipoTransferenciaId = v,
+                  ),
+                  loading: () => DropdownButtonFormField(
+                    decoration: const InputDecoration(labelText: 'Tipo de transferencia', border: OutlineInputBorder()),
+                    items: const [],
+                    onChanged: null,
+                  ),
+                  error: (_, __) => const Text('Error al cargar tipos'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: montoCtrl,
+                  decoration: const InputDecoration(labelText: 'Monto', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descripcionCtrl,
+                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              final monto = double.tryParse(montoCtrl.text.replaceAll(',', '.')) ?? venta.monto;
-              final updated = venta.copyWith(
-                clienteNombre: nombreCtrl.text.trim().isEmpty ? null : nombreCtrl.text.trim(),
-                clienteTelefono: telefonoCtrl.text.trim().isEmpty ? null : telefonoCtrl.text.trim(),
-                monto: monto,
-                descripcion: descripcionCtrl.text.trim().isEmpty ? null : descripcionCtrl.text.trim(),
-              );
-              Navigator.pop(ctx);
-              await ref.read(ventasProvider.notifier).actualizarVenta(updated);
-              if (mounted) {
-                ref.read(ventasProvider.notifier).obtenerVentaPorId(widget.ventaId);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Venta actualizada')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () async {
+                final monto = double.tryParse(montoCtrl.text.replaceAll(',', '.')) ?? venta.monto;
+                final updated = venta.copyWith(
+                  clienteNombre: nombreCtrl.text.trim().isEmpty ? null : nombreCtrl.text.trim(),
+                  clienteTelefono: telefonoCtrl.text.trim().isEmpty ? null : telefonoCtrl.text.trim(),
+                  codigoYape: codigoCtrl.text.trim().isEmpty ? null : codigoCtrl.text.trim(),
+                  tipoTransferenciaId: tipoTransferenciaId,
+                  monto: monto,
+                  descripcion: descripcionCtrl.text.trim().isEmpty ? null : descripcionCtrl.text.trim(),
                 );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+                Navigator.pop(ctx);
+                await ref.read(ventasProvider.notifier).actualizarVenta(updated);
+                if (mounted) {
+                  ref.read(ventasProvider.notifier).obtenerVentaPorId(widget.ventaId);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Venta actualizada')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -178,17 +208,37 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
       children: [
         // Estado
         Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              color: _getEstadoColor(venta.estado).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _getEstadoColor(venta.estado).withOpacity(0.3)),
-            ),
-            child: Text(
-              _getEstadoLabel(venta.estado),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _getEstadoColor(venta.estado)),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _getEstadoColor(venta.estado).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _getEstadoColor(venta.estado).withOpacity(0.3)),
+                ),
+                child: Text(
+                  _getEstadoLabel(venta.estado),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _getEstadoColor(venta.estado)),
+                ),
+              ),
+              if (venta.updatedAt != null && venta.updatedAt!.isAfter(venta.createdAt))
+                const SizedBox(width: 8),
+              if (venta.updatedAt != null && venta.updatedAt!.isAfter(venta.createdAt))
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: const Text(
+                    'Editado',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 24),

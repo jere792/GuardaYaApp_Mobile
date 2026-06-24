@@ -69,11 +69,10 @@ class VentasRepositoryImpl implements VentasRepository {
   }
 
   @override
-  Future<Either<Failure, Venta?>> buscarVentaPorCodigo(String empresaId, String codigo) async {
+  Future<Either<Failure, List<Venta>>> buscarVentaPorCodigo(String empresaId, String codigo) async {
     try {
       final data = await _remote.buscarVentaPorCodigo(empresaId, codigo);
-      if (data == null) return const Right(null);
-      return Right(VentaModel.fromJson(data).toEntity());
+      return Right(data.map((e) => VentaModel.fromJson(e).toEntity()).toList());
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -91,8 +90,12 @@ class VentasRepositoryImpl implements VentasRepository {
 
   @override
   Future<Either<Failure, List<Venta>>> buscarVentaPorNombre(String empresaId, String nombre) async {
-    // TODO: Implementar busqueda por nombre en Supabase
-    return Left(ServerFailure('No implementado'));
+    try {
+      final data = await _remote.buscarVentaPorNombre(empresaId, nombre);
+      return Right(data.map((e) => VentaModel.fromJson(e).toEntity()).toList());
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override

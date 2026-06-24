@@ -107,8 +107,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     setState(() => _verificandoCodigo = true);
     try {
       final datasource = VentasDatasource();
-      final existente = await datasource.buscarVentaPorCodigo(empresaId, codigo);
-      if (mounted) setState(() => _codigoDuplicado = existente != null);
+      final existentes = await datasource.buscarVentaPorCodigo(empresaId, codigo);
+      if (mounted) setState(() => _codigoDuplicado = existentes.any((v) => v['codigo_yape'] == codigo));
     } catch (_) {
       if (mounted) setState(() => _codigoDuplicado = false);
     } finally {
@@ -313,8 +313,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
     final datasource = VentasDatasource();
     if (!_isOffline && usuario.empresaId != null) {
       try {
-        final existente = await datasource.buscarVentaPorCodigo(usuario.empresaId!, codigoOp);
-        if (existente != null) {
+        final existentes = await datasource.buscarVentaPorCodigo(usuario.empresaId!, codigoOp);
+        if (existentes.any((v) => v['codigo_yape'] == codigoOp)) {
           TopRightToast.show(context, 'Este código de operación ya fue registrado', isError: true);
           return;
         }

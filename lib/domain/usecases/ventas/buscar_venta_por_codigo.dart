@@ -4,12 +4,12 @@ import 'package:guardaya_app/core/usecases/usecase.dart';
 import 'package:guardaya_app/domain/entities/venta.dart';
 import 'package:guardaya_app/domain/repositories/ventas_repository.dart';
 
-class BuscarVentaPorCodigo implements UseCase<Venta?, BuscarVentaPorCodigoParams> {
+class BuscarVentaPorCodigo implements UseCase<List<Venta>, BuscarVentaPorCodigoParams> {
   final VentasRepository repository;
   BuscarVentaPorCodigo(this.repository);
 
   @override
-  Future<Either<Failure, Venta?>> call(BuscarVentaPorCodigoParams params) async {
+  Future<Either<Failure, List<Venta>>> call(BuscarVentaPorCodigoParams params) async {
     return await repository.buscarVentaPorCodigo(params.empresaId, params.codigo);
   }
 }

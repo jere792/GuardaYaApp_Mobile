@@ -48,6 +48,16 @@ class PendingVentasDao {
     );
   }
 
+  Future<void> deleteAllCacheVentas() async {
+    final db = await _dbHelper.database;
+    await db.delete('cache_ventas');
+  }
+
+  Future<void> deleteAllPendingVentas() async {
+    final db = await _dbHelper.database;
+    await db.delete('pending_ventas');
+  }
+
   Future<void> insertCacheVenta(Map<String, dynamic> venta) async {
     final db = await _dbHelper.database;
     await db.insert('cache_ventas', venta, conflictAlgorithm: ConflictAlgorithm.replace);

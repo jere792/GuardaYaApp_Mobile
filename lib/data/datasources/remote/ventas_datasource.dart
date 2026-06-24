@@ -19,17 +19,17 @@ class VentasDatasource {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  Future<Map<String, dynamic>?> buscarVentaPorCodigo(String empresaId, String codigo) async {
+  Future<List<Map<String, dynamic>>> buscarVentaPorCodigo(String empresaId, String codigo) async {
     final response = await SupabaseService.withTimeout(
       SupabaseService.from('ventas')
         .select()
         .eq('empresa_id', empresaId)
-        .eq('codigo_yape', codigo)
-        .maybeSingle(),
+        .ilike('codigo_yape', '%$codigo%')
+        .order('created_at', ascending: false),
       operation: 'buscarVentaPorCodigo',
     );
     
-    return response;
+    return List<Map<String, dynamic>>.from(response);
   }
 
   Future<List<Map<String, dynamic>>> buscarVentaPorTelefono(String empresaId, String telefono) async {
@@ -40,6 +40,19 @@ class VentasDatasource {
         .ilike('cliente_telefono', '%$telefono%')
         .order('created_at', ascending: false),
       operation: 'buscarVentaPorTelefono',
+    );
+    
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<List<Map<String, dynamic>>> buscarVentaPorNombre(String empresaId, String nombre) async {
+    final response = await SupabaseService.withTimeout(
+      SupabaseService.from('ventas')
+        .select()
+        .eq('empresa_id', empresaId)
+        .ilike('cliente_nombre', '%$nombre%')
+        .order('created_at', ascending: false),
+      operation: 'buscarVentaPorNombre',
     );
     
     return List<Map<String, dynamic>>.from(response);

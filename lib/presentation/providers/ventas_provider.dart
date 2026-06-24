@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/data/datasources/local/db/pending_ventas_dao.dart';
+import 'package:guardaya_app/data/models/pending_venta_model.dart';
 import 'package:guardaya_app/data/datasources/remote/ventas_datasource.dart';
 import 'package:guardaya_app/data/repositories/implementations/ventas_repository_impl.dart';
 import 'package:guardaya_app/domain/entities/tipo_transferencia.dart';
 import 'package:guardaya_app/domain/entities/venta.dart';
 import 'package:guardaya_app/domain/repositories/ventas_repository.dart';
 import 'package:guardaya_app/domain/usecases/ventas/buscar_venta_por_codigo.dart';
+import 'package:guardaya_app/domain/usecases/ventas/buscar_venta_por_nombre.dart';
 import 'package:guardaya_app/domain/usecases/ventas/buscar_venta_por_telefono.dart';
 import 'package:guardaya_app/domain/usecases/ventas/cambiar_estado_venta.dart';
 import 'package:guardaya_app/domain/usecases/ventas/obtener_venta_por_id.dart';
@@ -31,9 +33,11 @@ final ventasProvider = StateNotifierProvider<VentasNotifier, VentasState>((ref) 
     obtenerPorFecha: ref.watch(obtenerVentasPorFechaProvider),
     buscarPorCodigo: ref.watch(buscarPorCodigoProvider),
     buscarPorTelefono: ref.watch(buscarPorTelefonoProvider),
+    buscarPorNombre: ref.watch(buscarPorNombreProvider),
     cambiarEstado: ref.watch(cambiarEstadoVentaProvider),
     obtenerPorId: ref.watch(obtenerVentaPorIdProvider),
     obtenerPorRango: ref.watch(obtenerVentasPorRangoProvider),
+    pendingDao: ref.watch(pendingVentasDaoProvider),
   );
 });
 
@@ -69,6 +73,10 @@ final buscarPorCodigoProvider = Provider<BuscarVentaPorCodigo>((ref) {
 
 final buscarPorTelefonoProvider = Provider<BuscarVentaPorTelefono>((ref) {
   return BuscarVentaPorTelefono(ref.watch(ventasRepositoryProvider));
+});
+
+final buscarPorNombreProvider = Provider<BuscarVentaPorNombre>((ref) {
+  return BuscarVentaPorNombre(ref.watch(ventasRepositoryProvider));
 });
 
 final cambiarEstadoVentaProvider = Provider<CambiarEstadoVenta>((ref) {
@@ -117,9 +125,11 @@ class VentasNotifier extends StateNotifier<VentasState> {
   final ObtenerVentasPorFecha _obtenerPorFecha;
   final BuscarVentaPorCodigo _buscarPorCodigo;
   final BuscarVentaPorTelefono _buscarPorTelefono;
+  final BuscarVentaPorNombre _buscarPorNombre;
   final CambiarEstadoVenta _cambiarEstado;
   final ObtenerVentaPorId _obtenerPorId;
   final ObtenerVentasPorRango _obtenerPorRango;
+  final PendingVentasDao _pendingDao;
 
   VentasNotifier({
     required RegistrarVenta registrar,
@@ -127,17 +137,21 @@ class VentasNotifier extends StateNotifier<VentasState> {
     required ObtenerVentasPorFecha obtenerPorFecha,
     required BuscarVentaPorCodigo buscarPorCodigo,
     required BuscarVentaPorTelefono buscarPorTelefono,
+    required BuscarVentaPorNombre buscarPorNombre,
     required CambiarEstadoVenta cambiarEstado,
     required ObtenerVentaPorId obtenerPorId,
     required ObtenerVentasPorRango obtenerPorRango,
+    required PendingVentasDao pendingDao,
   })  : _registrar = registrar,
         _actualizar = actualizar,
         _obtenerPorFecha = obtenerPorFecha,
         _buscarPorCodigo = buscarPorCodigo,
         _buscarPorTelefono = buscarPorTelefono,
+        _buscarPorNombre = buscarPorNombre,
         _cambiarEstado = cambiarEstado,
         _obtenerPorId = obtenerPorId,
         _obtenerPorRango = obtenerPorRango,
+        _pendingDao = pendingDao,
         super(const VentasState());
 
   Future<void> obtenerVentaPorId(String ventaId) async {
@@ -185,10 +199,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
     final result = await _buscarPorCodigo(BuscarVentaPorCodigoParams(empresaId: empresaId, codigo: codigo));
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (venta) {
-        final list = venta != null ? [venta] : <Venta>[];
-        state = state.copyWith(isLoading: false, ventas: list);
-      },
+      (ventas) => state = state.copyWith(isLoading: false, ventas: ventas),
     );
   }
 
@@ -218,11 +229,15 @@ class VentasNotifier extends StateNotifier<VentasState> {
         final result = await _buscarPorCodigo(BuscarVentaPorCodigoParams(empresaId: empresaId, codigo: codigo));
         result.fold(
           (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar por código: ${failure.message}'),
-          (venta) {
-            if (venta != null) resultados.add(venta);
-          },
+          (ventas) => resultados = ventas,
         );
         if (state.error != null) return;
+        final pending = await _pendingDao.getPendingVentas();
+        for (final p in pending) {
+          if (p.codigoYape?.contains(codigo) ?? false) {
+            resultados.add(_pendingToVenta(p));
+          }
+        }
       } else if (telefono != null && telefono.isNotEmpty) {
         final result = await _buscarPorTelefono(BuscarVentaPorTelefonoParams(empresaId: empresaId, telefono: telefono));
         result.fold(
@@ -230,8 +245,27 @@ class VentasNotifier extends StateNotifier<VentasState> {
           (ventas) => resultados = ventas,
         );
         if (state.error != null) return;
+        final pending = await _pendingDao.getPendingVentas();
+        for (final p in pending) {
+          if (p.clienteTelefono?.toLowerCase().contains(telefono.toLowerCase()) ?? false) {
+            resultados.add(_pendingToVenta(p));
+          }
+        }
+      } else if (nombre != null && nombre.isNotEmpty) {
+        final result = await _buscarPorNombre(BuscarVentaPorNombreParams(empresaId: empresaId, nombre: nombre));
+        result.fold(
+          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar por nombre: ${failure.message}'),
+          (ventas) => resultados = ventas,
+        );
+        if (state.error != null) return;
+        final pending = await _pendingDao.getPendingVentas();
+        for (final p in pending) {
+          if (p.clienteNombre?.toLowerCase().contains(nombre.toLowerCase()) ?? false) {
+            resultados.add(_pendingToVenta(p));
+          }
+        }
       } else {
-        final inicio = fechaInicio ?? (nombre != null && nombre.isNotEmpty ? DateTime.now().subtract(const Duration(days: 180)) : DateTime.now());
+        final inicio = fechaInicio ?? DateTime.now();
         final fin = fechaFin ?? inicio;
         if (inicio == fin) {
           final result = await _obtenerPorFecha(ObtenerVentasParams(empresaId: empresaId, fecha: inicio));
@@ -246,13 +280,6 @@ class VentasNotifier extends StateNotifier<VentasState> {
             (ventas) => resultados = ventas,
           );
         }
-      }
-
-      // Filtrar por nombre localmente si se especificó
-      if (nombre != null && nombre.isNotEmpty) {
-        resultados = resultados.where((v) =>
-          v.clienteNombre?.toLowerCase().contains(nombre.toLowerCase()) ?? false
-        ).toList();
       }
 
       state = state.copyWith(isLoading: false, ventas: resultados);
@@ -285,6 +312,28 @@ class VentasNotifier extends StateNotifier<VentasState> {
         }).toList();
         state = state.copyWith(isLoading: false, ventas: updatedVentas);
       },
+    );
+  }
+
+  Future<void> limpiarCacheLocal() async {
+    await _pendingDao.deleteAllCacheVentas();
+  }
+
+  Venta _pendingToVenta(PendingVentaModel p) {
+    return Venta(
+      id: p.id,
+      empresaId: p.empresaId,
+      usuarioId: p.usuarioId,
+      clienteId: p.clienteId,
+      codigoYape: p.codigoYape,
+      monto: p.monto,
+      clienteNombre: p.clienteNombre,
+      clienteTelefono: p.clienteTelefono,
+      fechaYape: p.fechaYape != null ? DateTime.tryParse(p.fechaYape!) : null,
+      descripcion: p.descripcion,
+      estado: p.estado,
+      tipoTransferenciaId: p.tipoTransferenciaId,
+      createdAt: DateTime.tryParse(p.createdAt) ?? DateTime.now(),
     );
   }
 

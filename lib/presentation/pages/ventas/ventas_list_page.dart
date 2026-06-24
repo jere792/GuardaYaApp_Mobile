@@ -77,6 +77,25 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
       return;
     }
 
+    if (codigo.isNotEmpty && codigo.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El código debe tener al menos 3 caracteres')),
+      );
+      return;
+    }
+    if (telefono.isNotEmpty && telefono.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El teléfono debe tener al menos 3 caracteres')),
+      );
+      return;
+    }
+    if (nombre.isNotEmpty && nombre.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El nombre debe tener al menos 3 caracteres')),
+      );
+      return;
+    }
+
     ref.read(ventasProvider.notifier).buscarVentas(
       empresaId: usuario!.empresaId!,
       codigo: codigo.isNotEmpty ? codigo : null,
@@ -118,18 +137,64 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
             icon: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
             onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'clear_cache') {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Limpiar caché local'),
+                    content: const Text('Se eliminarán las ventas pendientes y el caché local. Las ventas ya sincronizadas en el servidor no se verán afectadas.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          ref.read(ventasProvider.notifier).limpiarCacheLocal();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Caché limpiado correctamente')),
+                          );
+                          _limpiarFiltros();
+                        },
+                        child: const Text('Limpiar', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'clear_cache', child: Row(
+                children: [Icon(Icons.delete_sweep, size: 20, color: Colors.red), SizedBox(width: 8), Text('Limpiar caché')],
+              )),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => context.push('/ventas/registrar'),
-          ),
-        ],
+          ),],
       ),
-      body: Column(
-        children: [
-          if (_showFilters) _buildFilterPanel(),
-          Expanded(child: _buildContent(ventasState)),
-        ],
-      ),
+      body: _showFilters
+          ? SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    _buildFilterPanel(),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      child: _buildContent(ventasState),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : Column(
+              children: [
+                Expanded(child: _buildContent(ventasState)),
+              ],
+            ),
     );
   }
 
@@ -163,6 +228,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
             Row(
               children: [
                 Expanded(
+                  flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: _buscar,
                     icon: const Icon(Icons.search, size: 18),
@@ -176,14 +242,16 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: _limpiarFiltros,
-                  icon: const Icon(Icons.clear, size: 18),
-                  label: const Text('Limpiar'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    foregroundColor: colorScheme.onSurfaceVariant,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _limpiarFiltros,
+                    icon: const Icon(Icons.clear, size: 18),
+                    label: const Text('Limpiar'),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      foregroundColor: colorScheme.onSurfaceVariant,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
               ],
@@ -375,6 +443,19 @@ class _VentaCard extends StatelessWidget {
                     child: Text(_getEstadoLabel(venta.estado),
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _getEstadoColor(venta.estado))),
                   ),
+                  if (venta.updatedAt != null && venta.updatedAt!.isAfter(venta.createdAt))
+                    const SizedBox(width: 6),
+                  if (venta.updatedAt != null && venta.updatedAt!.isAfter(venta.createdAt))
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: const Text('Editado',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.blue)),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),

@@ -118,6 +118,31 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     _cargarVentasDelDia();
   }
 
+  Widget _buildOfflineMessage() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off, color: Colors.orange, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Falta conexión a internet para mostrar las ventas anteriores. Cuando te conectes, aparecerán automáticamente.',
+              style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ventasState = ref.watch(ventasProvider);
@@ -318,7 +343,7 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
               const SizedBox(height: 16),
               Text('Error al cargar ventas', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text(state.error!, textAlign: TextAlign.center, style: TextStyle(color: colorScheme.onSurfaceVariant)),
+              Text('No se pudieron cargar las ventas. Verifica tu conexión a internet.', textAlign: TextAlign.center, style: TextStyle(color: colorScheme.onSurfaceVariant)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _cargarVentasDelDia,
@@ -332,6 +357,26 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     }
 
     if (state.ventas.isEmpty) {
+      if (state.showOfflineMessage) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.wifi_off, size: 64, color: Colors.orange.withOpacity(0.3)),
+              const SizedBox(height: 16),
+              Text('Sin conexión', style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              Text('Conéctate a internet para ver tus ventas', style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _cargarVentasDelDia,
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        );
+      }
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -348,11 +393,18 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
 
     final totalPages = state.ventas.isEmpty ? 1 : (state.ventas.length / _pageSize).ceil();
     final pagedVentas = state.ventas.skip(_currentPage * _pageSize).take(_pageSize).toList();
+    final hasOfflineMessage = state.showOfflineMessage;
+    final itemCount = pagedVentas.length + (hasOfflineMessage ? 1 : 0);
 
     final list = ListView.builder(
       padding: const EdgeInsets.all(8),
-      itemCount: pagedVentas.length,
-      itemBuilder: (context, index) => _VentaCard(venta: pagedVentas[index]),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        if (index < pagedVentas.length) {
+          return _VentaCard(venta: pagedVentas[index]);
+        }
+        return _buildOfflineMessage();
+      },
     );
 
     if (totalPages <= 1) return list;

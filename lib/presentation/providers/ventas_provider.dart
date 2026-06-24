@@ -96,12 +96,14 @@ class VentasState {
   final Venta? ventaSeleccionada;
   final bool isLoading;
   final String? error;
+  final bool showOfflineMessage;
 
   const VentasState({
     this.ventas = const [],
     this.ventaSeleccionada,
     this.isLoading = false,
     this.error,
+    this.showOfflineMessage = false,
   });
 
   VentasState copyWith({
@@ -109,12 +111,14 @@ class VentasState {
     Venta? ventaSeleccionada,
     bool? isLoading,
     String? error,
+    bool? showOfflineMessage,
   }) {
     return VentasState(
       ventas: ventas ?? this.ventas,
       ventaSeleccionada: ventaSeleccionada ?? this.ventaSeleccionada,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      showOfflineMessage: showOfflineMessage ?? this.showOfflineMessage,
     );
   }
 }
@@ -186,12 +190,46 @@ class VentasNotifier extends StateNotifier<VentasState> {
   }
 
   Future<void> obtenerVentasDelDia(String empresaId, DateTime fecha) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, error: null, showOfflineMessage: false);
     final result = await _obtenerPorFecha(ObtenerVentasParams(empresaId: empresaId, fecha: fecha));
+
+    List<Venta>? remoteVentas;
+    String? errorMsg;
+
     result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (ventas) => state = state.copyWith(isLoading: false, ventas: ventas),
+      (failure) {
+        errorMsg = failure.message;
+      },
+      (ventas) {
+        remoteVentas = ventas;
+      },
     );
+
+    final pending = await _pendingDao.getPendingVentas();
+    final pendingVentas = pending.map((p) => _pendingToVenta(p)).toList();
+
+    if (errorMsg != null) {
+      final map = <String, Venta>{};
+      for (final v in pendingVentas) {
+        map[v.id] = v;
+      }
+      state = state.copyWith(
+        isLoading: false,
+        ventas: map.values.toList(),
+        showOfflineMessage: true,
+      );
+    } else {
+      final map = <String, Venta>{};
+      for (final v in remoteVentas!) {
+        map[v.id] = v;
+      }
+      for (final v in pendingVentas) {
+        if (!map.containsKey(v.id)) {
+          map[v.id] = v;
+        }
+      }
+      state = state.copyWith(isLoading: false, ventas: map.values.toList());
+    }
   }
 
   Future<void> buscarPorCodigo(String empresaId, String codigo) async {
@@ -228,7 +266,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
       if (codigo != null && codigo.isNotEmpty) {
         final result = await _buscarPorCodigo(BuscarVentaPorCodigoParams(empresaId: empresaId, codigo: codigo));
         result.fold(
-          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar por código: ${failure.message}'),
+          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar. Verifica tu conexión a internet.'),
           (ventas) => resultados = ventas,
         );
         if (state.error != null) return;
@@ -241,7 +279,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
       } else if (telefono != null && telefono.isNotEmpty) {
         final result = await _buscarPorTelefono(BuscarVentaPorTelefonoParams(empresaId: empresaId, telefono: telefono));
         result.fold(
-          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar por teléfono: ${failure.message}'),
+          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar. Verifica tu conexión a internet.'),
           (ventas) => resultados = ventas,
         );
         if (state.error != null) return;
@@ -254,7 +292,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
       } else if (nombre != null && nombre.isNotEmpty) {
         final result = await _buscarPorNombre(BuscarVentaPorNombreParams(empresaId: empresaId, nombre: nombre));
         result.fold(
-          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar por nombre: ${failure.message}'),
+          (failure) => state = state.copyWith(isLoading: false, error: 'Error al buscar. Verifica tu conexión a internet.'),
           (ventas) => resultados = ventas,
         );
         if (state.error != null) return;

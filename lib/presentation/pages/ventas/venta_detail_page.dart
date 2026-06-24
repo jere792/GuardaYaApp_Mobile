@@ -184,7 +184,7 @@ class _VentaDetailPageState extends ConsumerState<VentaDetailPage> {
               const SizedBox(height: 16),
               Text('Error al cargar la venta', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text(state.error!, textAlign: TextAlign.center, style: TextStyle(color: Colors.red.shade700)),
+              Text('No se pudo cargar la venta. Verifica tu conexión a internet.', textAlign: TextAlign.center, style: TextStyle(color: Colors.red.shade700)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.read(ventasProvider.notifier).obtenerVentaPorId(widget.ventaId),

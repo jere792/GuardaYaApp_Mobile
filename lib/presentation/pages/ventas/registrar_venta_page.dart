@@ -188,7 +188,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         'OCR completado. Datos extraídos con ${(result['confianza'] * 100).toStringAsFixed(0)}% de confianza.',
       );
     } catch (e) {
-      TopRightToast.show(context, 'Error al escanear: ${e.toString()}', isError: true);
+      TopRightToast.show(context, 'Error al escanear el comprobante. Intenta de nuevo.', isError: true);
     } finally {
       setState(() => _isScanning = false);
     }
@@ -392,7 +392,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
         } catch (syncError) {
           debugPrint('Sync inmediato falló: $syncError');
           if (mounted) {
-            TopRightToast.show(context, 'Error al sincronizar: $syncError', isError: true);
+            TopRightToast.show(context, 'No se pudo sincronizar. Se guardó localmente y se subirá automáticamente.', isError: true);
           }
         }
       }
@@ -400,7 +400,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       if (mounted) LoadingOverlay.hide(context);
 
       if (synced) {
-        TopRightToast.show(context, 'Venta guardada y sincronizada con Supabase');
+        TopRightToast.show(context, 'Venta guardada y sincronizada correctamente');
       } else if (_isOffline) {
         TopRightToast.show(context, 'Venta guardada localmente. Se sincronizará cuando haya internet.');
       } else {
@@ -415,7 +415,7 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
       }
     } catch (e) {
       if (mounted) LoadingOverlay.hide(context);
-      TopRightToast.show(context, 'Error al guardar: ${e.toString()}', isError: true);
+      TopRightToast.show(context, 'Error al guardar la venta. Intenta de nuevo.', isError: true);
     }
   }
 

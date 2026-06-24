@@ -14,7 +14,7 @@ import 'package:guardaya_app/presentation/widgets/common/loading_overlay.dart';
 import 'package:guardaya_app/presentation/widgets/common/top_right_toast.dart';
 import 'package:guardaya_app/services/ocr_service.dart';
 import 'package:guardaya_app/data/datasources/local/db/pending_ventas_dao.dart';
-import 'package:guardaya_app/services/connectivity_service.dart';
+import 'package:guardaya_app/presentation/providers/connectivity_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:guardaya_app/domain/entities/cliente.dart';
 import 'package:guardaya_app/domain/entities/tipo_transferencia.dart';
@@ -86,14 +86,8 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
   @override
   void initState() {
     super.initState();
-    _checkConnectivity();
+    _isOffline = !ref.read(connectivityProvider);
     _codigoController.addListener(_onCodigoChanged);
-  }
-
-  Future<void> _checkConnectivity() async {
-    final connectivityService = ConnectivityService();
-    final online = await connectivityService.isOnline;
-    setState(() => _isOffline = !online);
   }
 
   void _onCodigoChanged() {
@@ -397,6 +391,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
           synced = true;
         } catch (syncError) {
           debugPrint('Sync inmediato falló: $syncError');
+          if (mounted) {
+            TopRightToast.show(context, 'Error al sincronizar: $syncError', isError: true);
+          }
         }
       }
 
@@ -479,6 +476,9 @@ class _RegistrarVentaPageState extends ConsumerState<RegistrarVentaPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(connectivityProvider, (previous, next) {
+      if (mounted) setState(() => _isOffline = !next);
+    });
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registrar Venta'),

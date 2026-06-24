@@ -16,6 +16,7 @@ class CategoriasListPage extends ConsumerStatefulWidget {
 class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _mostrarInactivos = false;
   int _currentPage = 0;
   int get _pageSize => 10;
 
@@ -45,7 +46,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
     final state = ref.watch(categoriasProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    var filtered = List<Categoria>.from(state.categorias);
+    var filtered = state.categorias.where((c) => c.activo == !_mostrarInactivos).toList();
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((c) =>
         c.nombre.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -59,14 +60,25 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Categorías'),
+        title: Text(_mostrarInactivos ? 'Categorías Inactivas' : 'Categorías'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            if (_mostrarInactivos) {
+              setState(() => _mostrarInactivos = false);
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
         ),
         actions: [
+          IconButton(
+            icon: Icon(_mostrarInactivos ? Icons.category : Icons.delete_sweep),
+            onPressed: () => setState(() { _mostrarInactivos = !_mostrarInactivos; _currentPage = 0; }),
+            tooltip: _mostrarInactivos ? 'Ver activos' : 'Ver inactivos',
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => context.push('/categorias/crear'),
@@ -144,7 +156,7 @@ class _CategoriasListPageState extends ConsumerState<CategoriasListPage> {
                                 Icon(Icons.category, size: 64, color: AppColors.primary.withOpacity(0.3)),
                                 const SizedBox(height: 16),
                                 Text(
-                                  _searchQuery.isNotEmpty ? 'Sin resultados' : 'No hay categorías',
+                                  _searchQuery.isNotEmpty ? 'Sin resultados' : (_mostrarInactivos ? 'No hay inactivas' : 'No hay categorías'),
                                   style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
                                 ),
                               ],

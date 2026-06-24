@@ -143,6 +143,46 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     );
   }
 
+  Widget _buildSyncBanner(VentasState state) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE3F2FD),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF90CAF9)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_upload, color: Color(0xFF1976D2), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '${state.pendingCount} venta${state.pendingCount == 1 ? '' : 's'} pendiente${state.pendingCount == 1 ? '' : 's'} de sincronizar',
+              style: const TextStyle(color: Color(0xFF1565C0), fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+          SizedBox(
+            height: 32,
+            child: ElevatedButton(
+              onPressed: state.isLoading ? null : () => ref.read(ventasProvider.notifier).syncPendingVentas(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1976D2),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                textStyle: const TextStyle(fontSize: 12),
+              ),
+              child: state.isLoading
+                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Sincronizar'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ventasState = ref.watch(ventasProvider);
@@ -394,46 +434,56 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
     final totalPages = state.ventas.isEmpty ? 1 : (state.ventas.length / _pageSize).ceil();
     final pagedVentas = state.ventas.skip(_currentPage * _pageSize).take(_pageSize).toList();
     final hasOfflineMessage = state.showOfflineMessage;
-    final itemCount = pagedVentas.length + (hasOfflineMessage ? 1 : 0);
+    final pendingCount = state.pendingCount;
+    final itemCount = pagedVentas.length + (hasOfflineMessage ? 1 : 0) + (pendingCount > 0 ? 1 : 0);
 
     final list = ListView.builder(
       padding: const EdgeInsets.all(8),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index < pagedVentas.length) {
-          return _VentaCard(venta: pagedVentas[index]);
+        int offset = 0;
+        if (pendingCount > 0) {
+          if (index == 0) return _buildSyncBanner(state);
+          offset = 1;
+        }
+        final ventaIndex = index - offset;
+        if (ventaIndex < pagedVentas.length) {
+          return _VentaCard(
+            venta: pagedVentas[ventaIndex],
+            isPendingSync: state.pendingSyncIds.contains(pagedVentas[ventaIndex].id),
+          );
         }
         return _buildOfflineMessage();
       },
     );
 
-    if (totalPages <= 1) return list;
+    final pagination = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: _currentPage == 0 ? null : () => setState(() => _currentPage--),
+          ),
+          Text('Página ${_currentPage + 1} de $totalPages',
+              style: TextStyle(color: colorScheme.onSurfaceVariant)),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: _currentPage >= totalPages - 1 ? null : () => setState(() => _currentPage++),
+          ),
+        ],
+      ),
+    );
 
     return Column(
       children: [
         Expanded(child: list),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
-            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: _currentPage == 0 ? null : () => setState(() => _currentPage--),
-              ),
-              Text('Página ${_currentPage + 1} de $totalPages',
-                  style: TextStyle(color: colorScheme.onSurfaceVariant)),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: _currentPage >= totalPages - 1 ? null : () => setState(() => _currentPage++),
-              ),
-            ],
-          ),
-        ),
+        if (totalPages > 1) pagination,
       ],
     );
   }
@@ -441,7 +491,8 @@ class _VentasListPageState extends ConsumerState<VentasListPage> {
 
 class _VentaCard extends StatelessWidget {
   final Venta venta;
-  const _VentaCard({required this.venta});
+  final bool isPendingSync;
+  const _VentaCard({required this.venta, this.isPendingSync = false});
 
   Color _getEstadoColor(String estado) {
     switch (estado) {
@@ -495,6 +546,19 @@ class _VentaCard extends StatelessWidget {
                     child: Text(_getEstadoLabel(venta.estado),
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _getEstadoColor(venta.estado))),
                   ),
+                  if (isPendingSync) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF90CAF9).withOpacity(0.3)),
+                      ),
+                      child: const Text('Local',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF1565C0))),
+                    ),
+                  ],
                   if (venta.updatedAt != null && venta.updatedAt!.isAfter(venta.createdAt))
                     const SizedBox(width: 6),
                   if (venta.updatedAt != null && venta.updatedAt!.isAfter(venta.createdAt))

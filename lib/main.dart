@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guardaya_app/app.dart';
 import 'package:guardaya_app/presentation/providers/auth_provider.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
-import 'package:guardaya_app/services/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,9 +21,7 @@ void main() async {
   // Inicializar Supabase
   await SupabaseService.initialize();
 
-  // Inicializar WorkManager para sync en background
-  await SyncService.initialize();
-  await SyncService.registerPeriodicSync();
+  // Sync manual - no automático
 
   // Crear un container para hacer checkAuth antes de runApp
   final container = ProviderContainer();

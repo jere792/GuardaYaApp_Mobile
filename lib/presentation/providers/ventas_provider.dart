@@ -17,6 +17,7 @@ import 'package:guardaya_app/domain/usecases/ventas/actualizar_venta.dart';
 import 'package:guardaya_app/domain/usecases/ventas/registrar_venta.dart';
 import 'package:guardaya_app/services/connectivity_service.dart';
 import 'package:guardaya_app/services/supabase_service.dart';
+import 'dart:convert';
 
 final tiposTransferenciaProvider = FutureProvider<List<TipoTransferencia>>((ref) async {
   final response = await SupabaseService.from('tipos_transferencia')
@@ -97,6 +98,8 @@ class VentasState {
   final bool isLoading;
   final String? error;
   final bool showOfflineMessage;
+  final int pendingCount;
+  final Set<String> pendingSyncIds;
 
   const VentasState({
     this.ventas = const [],
@@ -104,6 +107,8 @@ class VentasState {
     this.isLoading = false,
     this.error,
     this.showOfflineMessage = false,
+    this.pendingCount = 0,
+    this.pendingSyncIds = const {},
   });
 
   VentasState copyWith({
@@ -112,6 +117,8 @@ class VentasState {
     bool? isLoading,
     String? error,
     bool? showOfflineMessage,
+    int? pendingCount,
+    Set<String>? pendingSyncIds,
   }) {
     return VentasState(
       ventas: ventas ?? this.ventas,
@@ -119,6 +126,8 @@ class VentasState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       showOfflineMessage: showOfflineMessage ?? this.showOfflineMessage,
+      pendingCount: pendingCount ?? this.pendingCount,
+      pendingSyncIds: pendingSyncIds ?? this.pendingSyncIds,
     );
   }
 }
@@ -230,6 +239,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
       }
       state = state.copyWith(isLoading: false, ventas: map.values.toList());
     }
+    loadPendingCount();
   }
 
   Future<void> buscarPorCodigo(String empresaId, String codigo) async {
@@ -321,6 +331,7 @@ class VentasNotifier extends StateNotifier<VentasState> {
       }
 
       state = state.copyWith(isLoading: false, ventas: resultados);
+      loadPendingCount();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -373,6 +384,100 @@ class VentasNotifier extends StateNotifier<VentasState> {
       tipoTransferenciaId: p.tipoTransferenciaId,
       createdAt: DateTime.tryParse(p.createdAt) ?? DateTime.now(),
     );
+  }
+
+  Future<void> loadPendingCount() async {
+    final all = await _pendingDao.getAllPendingVentas();
+    final notSynced = all.where((p) => p.syncStatus != 'synced').toList();
+    state = state.copyWith(
+      pendingCount: notSynced.length,
+      pendingSyncIds: notSynced.map((p) => p.id).toSet(),
+    );
+  }
+
+  Future<void> syncPendingVentas() async {
+    if (state.pendingCount == 0) return;
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final all = await _pendingDao.getAllPendingVentas();
+      final toSync = all.where((p) => p.syncStatus != 'synced').toList();
+      if (toSync.isEmpty) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      final datasource = VentasDatasource();
+      for (final p in toSync) {
+        try {
+          final ventaMap = p.toMap();
+          ventaMap.remove('sync_status');
+          ventaMap.remove('sync_error');
+          ventaMap.remove('retry_count');
+          ventaMap.remove('imagen_yape_local_path');
+          ventaMap.remove('imagen_entrega_local_path');
+          ventaMap.remove('productos');
+
+          if (ventaMap['fecha_yape'] != null && ventaMap['fecha_yape'] is String) {
+            ventaMap['fecha_yape'] = _parseFechaToIso(ventaMap['fecha_yape'] as String);
+          }
+          ventaMap['created_at'] = ventaMap['created_at'] ?? DateTime.now().toIso8601String();
+
+          final created = await datasource.registrarVenta(ventaMap);
+
+          if (p.productos != null && p.productos!.isNotEmpty) {
+            try {
+              final productosList = jsonDecode(p.productos!) as List<dynamic>;
+              final payload = productosList.map((prod) => {
+                'venta_id': created['id'],
+                'empresa_id': p.empresaId,
+                'nombre': prod['nombre'],
+                'cantidad': prod['cantidad'],
+                'precio_unitario': prod['precio'],
+                'subtotal': prod['subtotal'],
+              }).toList();
+              await datasource.registrarVentaProductos(created['id'], p.empresaId, payload);
+            } catch (_) {}
+          }
+
+          await _pendingDao.updateSyncStatus(p.id, 'synced');
+        } catch (e) {
+          await _pendingDao.updateSyncStatus(p.id, 'error',
+            error: e.toString(),
+            retryCount: p.retryCount + 1,
+          );
+        }
+      }
+
+      await loadPendingCount();
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  String? _parseFechaToIso(String fecha) {
+    try {
+      final parts = fecha.split(RegExp(r'[/-]'));
+      if (parts.length == 3 && parts[0].length <= 2) {
+        final dia = parts[0].padLeft(2, '0');
+        final mes = parts[1].padLeft(2, '0');
+        final anio = parts[2].length == 2 ? '20${parts[2]}' : parts[2];
+        return '$anio-$mes-${dia}T00:00:00.000Z';
+      }
+      const meses = {
+        'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04',
+        'may': '05', 'jun': '06', 'jul': '07', 'ago': '08',
+        'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12',
+      };
+      final textMatch = RegExp(r'(\d{1,2})\s+([a-z]{3})[a-z]*\.?\s+(\d{4})', caseSensitive: false).firstMatch(fecha);
+      if (textMatch != null) {
+        final dia = textMatch.group(1)!.padLeft(2, '0');
+        final mes = meses[textMatch.group(2)!.toLowerCase()] ?? '01';
+        final anio = textMatch.group(3)!;
+        return '$anio-$mes-${dia}T00:00:00.000Z';
+      }
+    } catch (_) {}
+    return fecha;
   }
 
   void resetError() {

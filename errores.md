@@ -41,6 +41,23 @@
 
 ---
 
+## Fixes aplicados
+
+### ✅ Sync MANUAL (ya no automático)
+- **`main.dart`**: Eliminado `SyncService.registerPeriodicSync()` — ya no hay sync automático cada 5 minutos.
+- **`ventas_provider.dart`**: Agregado `syncPendingVentas()` que sincroniza todas las ventas locales pendientes bajo demanda.
+- **`VentasListPage`**: Banner azul con botón **"Sincronizar"** que muestra cuántas ventas están pendientes.
+- **Tarjetas de venta**: Badge **"Local"** en las ventas que aún no se han sincronizado.
+
+### ✅ Sync reintenta ventas en estado 'error'
+- **`sync_service.dart`**: Cambiado el filtro de `sync_status = 'pending'` a `(sync_status = 'pending' OR sync_status = 'error') AND retry_count < 10`.
+- Las ventas que fallaron se reintentan.
+
+### ✅ Contador de pendientes
+- `VentasState` ahora incluye `pendingCount` (int) y `pendingSyncIds` (Set<String>).
+- Se actualiza automáticamente después de cargar ventas del día o buscar.
+- El badge y banner se sincronizan en tiempo real.
+
 ## Problemas detectados
 
 1. **`NoInternetFailure` está definido pero casi no se usa** -- la mayoría de repositorios devuelven `ServerFailure` genérico aunque el error sea de conexión.

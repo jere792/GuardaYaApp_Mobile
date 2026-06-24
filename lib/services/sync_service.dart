@@ -58,8 +58,8 @@ void callbackDispatcher() {
       // Leer ventas pendientes que no hayan excedido reintentos
       final pending = await db.query(
         'pending_ventas',
-        where: 'sync_status = ? AND retry_count < ?',
-        whereArgs: ['pending', 10],
+        where: '(sync_status = ? OR sync_status = ?) AND retry_count < ?',
+        whereArgs: ['pending', 'error', 10],
       );
 
       for (final venta in pending) {
